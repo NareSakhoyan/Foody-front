@@ -7,7 +7,9 @@ import { NextResponse } from 'next/server';
 export async function POST() {
   const authResult = await auth({ acceptsToken: 'any' });
   const userId =
-    authResult && 'userId' in authResult && typeof authResult.userId === 'string'
+    authResult &&
+    'userId' in authResult &&
+    typeof authResult.userId === 'string'
       ? authResult.userId
       : null;
   if (!userId) {

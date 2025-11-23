@@ -166,10 +166,13 @@ const RecipeForm = ({
       imageUrl,
       prepDescription,
       cookDescription,
-      prepTimeMinutes,
-      cookTimeMinutes,
-      servings,
-      tags,
+      prepTimeMinutes: prepTimeMinutes === '' ? null : prepTimeMinutes,
+      cookTimeMinutes: cookTimeMinutes === '' ? null : cookTimeMinutes,
+      servings: servings === '' ? null : servings,
+      tags: tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
       isPublic,
       ingredients,
       status: 'draft',
@@ -205,7 +208,11 @@ const RecipeForm = ({
     setPrepTimeMinutes(draftSnapshot.prepTimeMinutes ?? '');
     setCookTimeMinutes(draftSnapshot.cookTimeMinutes ?? '');
     setServings(draftSnapshot.servings ?? '');
-    setTags(draftSnapshot.tags ?? '');
+    setTags(
+      Array.isArray(draftSnapshot.tags)
+        ? draftSnapshot.tags.join(', ')
+        : draftSnapshot.tags ?? '',
+    );
     setIsPublic(draftSnapshot.isPublic ?? true);
     setIngredients(
       draftSnapshot.ingredients?.length
