@@ -129,10 +129,14 @@ const RecipeDetailPage = () => {
 
             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
               {recipe.prepTimeMinutes ? (
-                <Badge variant="outline">Prep: {recipe.prepTimeMinutes} min</Badge>
+                <Badge variant="outline">
+                  Prep: {recipe.prepTimeMinutes} min
+                </Badge>
               ) : null}
               {recipe.cookTimeMinutes ? (
-                <Badge variant="outline">Cook: {recipe.cookTimeMinutes} min</Badge>
+                <Badge variant="outline">
+                  Cook: {recipe.cookTimeMinutes} min
+                </Badge>
               ) : null}
               {recipe.servings ? (
                 <Badge variant="secondary">Serves {recipe.servings}</Badge>

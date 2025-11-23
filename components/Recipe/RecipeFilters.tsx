@@ -56,7 +56,10 @@ export const RecipeFilters = ({
   useEffect(() => {
     if (!showTagPicker) return;
     const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node)
+      ) {
         onToggleTagPicker(false);
       }
     };

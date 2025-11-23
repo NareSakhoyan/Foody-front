@@ -590,7 +590,9 @@ const RecipeForm = ({
                 Upload a photo to save it to Cloudinary.
               </p>
               {imageUploading ? (
-                <p className="text-xs text-muted-foreground">Uploading image…</p>
+                <p className="text-xs text-muted-foreground">
+                  Uploading image…
+                </p>
               ) : null}
             </div>
 

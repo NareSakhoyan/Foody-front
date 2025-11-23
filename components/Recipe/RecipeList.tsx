@@ -3,11 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Recipe } from '@/lib/types/recipe';
-import {
-  deleteRecipe,
-  favoriteRecipe,
-  fetchRecipes,
-} from '@/lib/api/recipes';
+import { deleteRecipe, favoriteRecipe, fetchRecipes } from '@/lib/api/recipes';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,7 +80,8 @@ const RecipeList = ({
   }, [callApi, endpoint, refreshKey]);
 
   const visibleRecipes = useMemo(
-    () => (includeDrafts ? recipes : recipes.filter((r) => r.status !== 'draft')),
+    () =>
+      includeDrafts ? recipes : recipes.filter((r) => r.status !== 'draft'),
     [includeDrafts, recipes],
   );
 
@@ -125,9 +122,13 @@ const RecipeList = ({
         case 'name':
           return a.name.localeCompare(b.name);
         case 'prep':
-          return (a.prepTimeMinutes ?? Infinity) - (b.prepTimeMinutes ?? Infinity);
+          return (
+            (a.prepTimeMinutes ?? Infinity) - (b.prepTimeMinutes ?? Infinity)
+          );
         case 'cook':
-          return (a.cookTimeMinutes ?? Infinity) - (b.cookTimeMinutes ?? Infinity);
+          return (
+            (a.cookTimeMinutes ?? Infinity) - (b.cookTimeMinutes ?? Infinity)
+          );
         default:
           return (
             new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -269,7 +270,12 @@ const RecipeList = ({
         <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
           No recipes match your filters.
           <div className="mt-3">
-            <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+            >
               Clear filters
             </Button>
           </div>

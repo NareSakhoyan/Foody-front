@@ -35,7 +35,10 @@ export const RecipeCard = ({
   return (
     <article className="group rounded-xl border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       <div className="relative mb-3 overflow-hidden rounded-lg">
-        <Link href={`/recipes/${recipe.id}`} className="group/block relative block">
+        <Link
+          href={`/recipes/${recipe.id}`}
+          className="group/block relative block"
+        >
           {recipe.imageUrl ? (
             <div className="relative h-44 w-full bg-muted">
               <Image
@@ -142,7 +145,9 @@ export const RecipeCard = ({
           <p className="line-clamp-2 text-muted-foreground">
             {recipe.ingredients
               .slice(0, 3)
-              .map((item) => `${item.quantity} ${item.measureUnit} ${item.name}`)
+              .map(
+                (item) => `${item.quantity} ${item.measureUnit} ${item.name}`,
+              )
               .join(', ')}
             {recipe.ingredients.length > 3 ? '…' : ''}
           </p>
