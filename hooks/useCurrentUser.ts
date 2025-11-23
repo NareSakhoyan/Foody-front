@@ -48,7 +48,8 @@ export function useCurrentUser() {
         setUser(data);
       } catch (e: unknown) {
         const status = (e as ApiError)?.status;
-        const canCreate = !creationAttemptedRef.current && status === 404 && clerkUser;
+        const canCreate =
+          !creationAttemptedRef.current && status === 404 && clerkUser;
 
         if (canCreate) {
           creationAttemptedRef.current = true;
