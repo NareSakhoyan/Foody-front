@@ -14,6 +14,7 @@ import { fetchRecipe, favoriteRecipe } from '@/lib/api/recipes';
 import { useApi } from '@/hooks/useApi';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Heart, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const RecipeDetailPage = () => {
   const params = useParams<{ id: string }>();
@@ -36,7 +37,9 @@ const RecipeDetailPage = () => {
         setRecipe(data);
       } catch (err) {
         console.error('Failed to load recipe', err);
-        setError('Could not load recipe.');
+        const message = 'Could not load recipe.';
+        setError(message);
+        toast.error(message);
       } finally {
         setLoading(false);
       }
@@ -51,7 +54,11 @@ const RecipeDetailPage = () => {
     try {
       await favoriteRecipe(callApi, recipe.id, nextState);
       setRecipe({ ...recipe, isFavorite: nextState });
+      toast.success(
+        nextState ? 'Added to favorites.' : 'Removed from favorites.',
+      );
     } catch (err) {
+      toast.error('Failed to update favorite. Please try again.');
       console.error('Failed to update favorite', err);
       setError('Failed to update favorite. Please try again.');
     } finally {

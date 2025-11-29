@@ -9,7 +9,12 @@ type SpicesSectionProps = {
   onChange: (index: number, field: keyof SpiceInput, value: string) => void;
 };
 
-function SpicesSection({ spices, onAdd, onRemove, onChange }: SpicesSectionProps) {
+function SpicesSection({
+  spices,
+  onAdd,
+  onRemove,
+  onChange,
+}: SpicesSectionProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">

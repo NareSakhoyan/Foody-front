@@ -10,6 +10,7 @@ import { createRecipe, updateRecipe } from '@/lib/api/recipes';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { toast } from 'sonner';
 import {
   capitalizeStart,
   emptyIngredient,
@@ -99,6 +100,10 @@ const RecipeForm = ({
   const initialIsPublicRef = useRef(initialData?.isPublic ?? true);
   const imageFileInputRef = useRef<HTMLInputElement | null>(null);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const showError = useCallback((message: string) => {
+    setError(message);
+    toast.error(message);
+  }, []);
 
   const hasContent = useMemo(() => {
     const hasText =
@@ -122,11 +127,7 @@ const RecipeForm = ({
     );
     const visibilityChanged = isPublic !== initialIsPublicRef.current;
     return Boolean(
-      hasText ||
-        hasNumbers ||
-        hasIngredients ||
-        hasSpices ||
-        visibilityChanged,
+      hasText || hasNumbers || hasIngredients || hasSpices || visibilityChanged,
     );
   }, [
     cookDescription,
@@ -393,11 +394,13 @@ const RecipeForm = ({
       }
 
       setImageUrl(uploadData.secure_url);
+      toast.success('Image uploaded.');
     } catch (err) {
       console.error('Error uploading image', err);
-      setImageUploadError(
-        err instanceof Error ? err.message : 'Image upload failed.',
-      );
+      const message =
+        err instanceof Error ? err.message : 'Image upload failed.';
+      setImageUploadError(message);
+      toast.error(message);
     } finally {
       setImageUploading(false);
       if (imageFileInputRef.current) {
@@ -455,14 +458,14 @@ const RecipeForm = ({
     setError(null);
 
     if (imageUploading) {
-      setError('Please wait for the image upload to finish.');
+      showError('Please wait for the image upload to finish.');
       setSubmitting(false);
       return;
     }
 
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError('Name is required to save a draft.');
+      showError('Name is required to save a draft.');
       setSubmitting(false);
       return;
     }
@@ -474,10 +477,11 @@ const RecipeForm = ({
         : await createRecipe(callApi, payload);
       localStorage.removeItem(draftStorageKey);
       setSafelySaved(true);
+      toast.success(isEdit ? 'Draft updated.' : 'Draft saved.');
       onSuccess?.(recipe);
     } catch (err) {
       console.error('Error saving draft', err);
-      setError('Failed to save draft. Please try again.');
+      showError('Failed to save draft. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -489,7 +493,7 @@ const RecipeForm = ({
     setError(null);
 
     if (imageUploading) {
-      setError('Please wait for the image upload to finish.');
+      showError('Please wait for the image upload to finish.');
       setSubmitting(false);
       return;
     }
@@ -506,19 +510,19 @@ const RecipeForm = ({
       .filter((ing) => ing.name);
 
     if (!trimmedName) {
-      setError('Name is required.');
+      showError('Name is required.');
       setSubmitting(false);
       return;
     }
 
     if (!trimmedSlug) {
-      setError('Slug is required.');
+      showError('Slug is required.');
       setSubmitting(false);
       return;
     }
 
     if (!filteredIngredients.length) {
-      setError('Add at least one ingredient.');
+      showError('Add at least one ingredient.');
       setSubmitting(false);
       return;
     }
@@ -531,10 +535,11 @@ const RecipeForm = ({
         : await createRecipe(callApi, payload);
       localStorage.removeItem(draftStorageKey);
       setSafelySaved(true);
+      toast.success(isEdit ? 'Recipe updated.' : 'Recipe published.');
       onSuccess?.(recipe);
     } catch (err) {
       console.error('Error saving recipe', err);
-      setError('Failed to save recipe. Please try again.');
+      showError('Failed to save recipe. Please try again.');
     } finally {
       setSubmitting(false);
     }
