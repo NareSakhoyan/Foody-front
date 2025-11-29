@@ -2,16 +2,12 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
-import { Heart, Search, SlidersHorizontal, PlusCircle } from 'lucide-react';
-import type { Recipe } from '@/lib/types/recipe';
-
-export type SortOption = 'recent' | 'name' | 'prep' | 'cook';
+import { Heart, Search, PlusCircle } from 'lucide-react';
+import { getTagLabel } from '@/lib/utils/tags';
 
 type RecipeFiltersProps = {
   search: string;
   onSearchChange: (value: string) => void;
-  sortBy: SortOption;
-  onSortChange: (value: SortOption) => void;
   allowFavorite: boolean;
   onlyFavorites: boolean;
   onToggleFavorites: () => void;
@@ -24,14 +20,11 @@ type RecipeFiltersProps = {
   showTagPicker: boolean;
   onToggleTagPicker: (open: boolean) => void;
   onAddTag: (value?: string) => void;
-  recipes: Recipe[];
 };
 
 export const RecipeFilters = ({
   search,
   onSearchChange,
-  sortBy,
-  onSortChange,
   allowFavorite,
   onlyFavorites,
   onToggleFavorites,
@@ -44,14 +37,24 @@ export const RecipeFilters = ({
   showTagPicker,
   onToggleTagPicker,
   onAddTag,
-  recipes,
 }: RecipeFiltersProps) => {
-  const hasRecipes = useMemo(() => recipes.length > 0, [recipes]);
   const pickerRef = useRef<HTMLDivElement | null>(null);
-  const displayTags = useMemo(
-    () => Array.from(new Set([...quickTags, ...selectedTags])),
-    [quickTags, selectedTags],
-  );
+
+  const normalizeTag = (value: unknown) => {
+    return getTagLabel(value as never);
+  };
+
+  const displayTags = useMemo(() => {
+    const combined = [...quickTags, ...Array.from(selectedTags)];
+    const normalized = combined
+      .map(normalizeTag)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    return Array.from(new Set(normalized));
+  }, [quickTags, selectedTags]);
+
+  const showTagFilters =
+    displayTags.length > 0 || availableTagChoices.length > 0;
 
   useEffect(() => {
     if (!showTagPicker) return;
@@ -80,20 +83,6 @@ export const RecipeFilters = ({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <SlidersHorizontal className="size-4" />
-            <span>Sort</span>
-            <select
-              className="rounded-md border bg-background px-2 py-1 text-sm outline-none focus-visible:border-ring"
-              value={sortBy}
-              onChange={(e) => onSortChange(e.target.value as SortOption)}
-            >
-              <option value="recent">Most recent</option>
-              <option value="name">Name A–Z</option>
-              <option value="prep">Prep time</option>
-              <option value="cook">Cook time</option>
-            </select>
-          </label>
           {allowFavorite ? (
             <Button
               type="button"
@@ -111,7 +100,7 @@ export const RecipeFilters = ({
         </div>
       </div>
 
-      {hasRecipes ? (
+      {showTagFilters ? (
         <div className="flex flex-wrap items-center gap-2">
           {displayTags.length ? (
             displayTags.map((tag) => {
@@ -133,34 +122,36 @@ export const RecipeFilters = ({
               Quick filters
             </span>
           )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onToggleTagPicker(!showTagPicker)}
-            disabled={!availableTagChoices.length}
-          >
-            <PlusCircle className="size-4" />
-            Add tag filter
-          </Button>
-          {showTagPicker ? (
-            <div ref={pickerRef} className="w-full max-w-sm">
-              <Combobox
-                options={availableTagChoices.map((tag) => ({
-                  label: `#${tag}`,
-                  value: tag,
-                }))}
-                value={tagChoice}
-                onChange={(val) => {
-                  onTagChoiceChange(val);
-                  onAddTag(val);
-                }}
-                placeholder="Search tags..."
-                className="w-full"
-                emptyText="No tags"
-              />
-            </div>
-          ) : null}
+          <div className="relative" ref={pickerRef}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onToggleTagPicker(!showTagPicker)}
+              disabled={!availableTagChoices.length}
+            >
+              <PlusCircle className="size-4" />
+              Add tag filter
+            </Button>
+            {showTagPicker ? (
+              <div className="absolute left-0 z-20 mt-2 w-64 min-w-[16rem] max-w-sm">
+                <Combobox
+                  options={availableTagChoices.map((tag) => ({
+                    label: `#${tag}`,
+                    value: tag,
+                  }))}
+                  value={tagChoice}
+                  onChange={(val) => {
+                    onTagChoiceChange(val);
+                    onAddTag(val);
+                  }}
+                  placeholder="Search tags..."
+                  className="w-full shadow-lg"
+                  emptyText="No tags"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

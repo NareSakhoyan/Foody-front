@@ -10,6 +10,17 @@ import { createRecipe, updateRecipe } from '@/lib/api/recipes';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ButtonGroup } from '@/components/ui/button-group';
+import {
+  capitalizeStart,
+  emptyIngredient,
+  emptySpice,
+  formatTagsInput,
+  slugify,
+  type IngredientInput,
+  type SpiceInput,
+} from './recipe-form-utils';
+import { IngredientsSection } from './IngredientsSection';
+import { SpicesSection } from './SpicesSection';
 
 type RecipeFormProps = {
   mode?: 'create' | 'edit';
@@ -20,30 +31,7 @@ type RecipeFormProps = {
 };
 
 type RecipeDraft = Partial<Recipe>;
-
-type IngredientInput = {
-  name: string;
-  quantity: number;
-  measureUnit: string;
-  note?: string;
-};
-
-const emptyIngredient: IngredientInput = {
-  name: '',
-  quantity: 1,
-  measureUnit: '',
-  note: '',
-};
-
 const draftStorageKey = 'recipeDraft';
-const slugify = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
 
 const RecipeForm = ({
   mode = 'create',
@@ -81,7 +69,7 @@ const RecipeForm = ({
   const [servings, setServings] = useState<number | ''>(
     initialData?.servings ?? '',
   );
-  const [tags, setTags] = useState(initialData?.tags?.join(', ') ?? '');
+  const [tags, setTags] = useState(formatTagsInput(initialData?.tags));
   const [isPublic, setIsPublic] = useState(initialData?.isPublic ?? true);
   const [ingredients, setIngredients] = useState<IngredientInput[]>(
     initialData?.ingredients?.length
@@ -92,6 +80,14 @@ const RecipeForm = ({
           note: ing.note ?? '',
         }))
       : [emptyIngredient],
+  );
+  const [spices, setSpices] = useState<SpiceInput[]>(
+    initialData?.spices?.length
+      ? initialData.spices.map((spice) => ({
+          name: spice.name,
+          note: spice.note ?? '',
+        }))
+      : [emptySpice],
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,9 +117,16 @@ const RecipeForm = ({
         (ing.quantity !== 1 && ing.quantity !== 0) ||
         (ing.note && ing.note.trim()),
     );
+    const hasSpices = spices.some(
+      (spice) => spice.name.trim() || (spice.note && spice.note.trim()),
+    );
     const visibilityChanged = isPublic !== initialIsPublicRef.current;
     return Boolean(
-      hasText || hasNumbers || hasIngredients || visibilityChanged,
+      hasText ||
+        hasNumbers ||
+        hasIngredients ||
+        hasSpices ||
+        visibilityChanged,
     );
   }, [
     cookDescription,
@@ -135,6 +138,7 @@ const RecipeForm = ({
     prepDescription,
     prepTimeMinutes,
     servings,
+    spices,
     shortDescription,
     tags,
   ]);
@@ -175,6 +179,7 @@ const RecipeForm = ({
         .filter(Boolean),
       isPublic,
       ingredients,
+      spices,
       status: 'draft',
       updatedAt: new Date().toISOString(),
     };
@@ -191,6 +196,7 @@ const RecipeForm = ({
     prepDescription,
     prepTimeMinutes,
     servings,
+    spices,
     shortDescription,
     slug,
     tags,
@@ -208,16 +214,15 @@ const RecipeForm = ({
     setPrepTimeMinutes(draftSnapshot.prepTimeMinutes ?? '');
     setCookTimeMinutes(draftSnapshot.cookTimeMinutes ?? '');
     setServings(draftSnapshot.servings ?? '');
-    setTags(
-      Array.isArray(draftSnapshot.tags)
-        ? draftSnapshot.tags.join(', ')
-        : draftSnapshot.tags ?? '',
-    );
+    setTags(formatTagsInput(draftSnapshot.tags ?? ''));
     setIsPublic(draftSnapshot.isPublic ?? true);
     setIngredients(
       draftSnapshot.ingredients?.length
         ? draftSnapshot.ingredients
         : [emptyIngredient],
+    );
+    setSpices(
+      draftSnapshot.spices?.length ? draftSnapshot.spices : [emptySpice],
     );
   };
 
@@ -256,6 +261,7 @@ const RecipeForm = ({
     prepDescription,
     prepTimeMinutes,
     servings,
+    spices,
     shortDescription,
     tags,
   ]);
@@ -283,6 +289,26 @@ const RecipeForm = ({
 
   const removeIngredient = (index: number) => {
     setIngredients((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateSpice = (
+    index: number,
+    field: keyof SpiceInput,
+    value: string,
+  ) => {
+    setSpices((prev) =>
+      prev.map((spice, i) =>
+        i === index ? { ...spice, [field]: value } : spice,
+      ),
+    );
+  };
+
+  const addSpice = () => {
+    setSpices((prev) => [...prev, { ...emptySpice }]);
+  };
+
+  const removeSpice = (index: number) => {
+    setSpices((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleCloseRequest = useCallback(() => {
@@ -395,6 +421,13 @@ const RecipeForm = ({
         measureUnit: ing.measureUnit.trim(),
       }))
       .filter((ing) => ing.name || status === 'draft');
+    const filteredSpices = spices
+      .map((spice) => ({
+        ...spice,
+        name: capitalizeStart(spice.name),
+        note: (spice.note || '').trim(),
+      }))
+      .filter((spice) => spice.name || status === 'draft');
 
     return {
       name: name.trim(),
@@ -411,6 +444,7 @@ const RecipeForm = ({
         .map((t) => t.trim())
         .filter(Boolean),
       ingredients: filteredIngredients,
+      spices: filteredSpices,
       isPublic,
       status,
     };
@@ -722,75 +756,20 @@ const RecipeForm = ({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">
-              Ingredients {mode === 'create' ? '*' : ''}
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={addIngredient}
-            >
-              Add ingredient
-            </Button>
-          </div>
+        <IngredientsSection
+          ingredients={ingredients}
+          onAdd={addIngredient}
+          onRemove={removeIngredient}
+          onChange={updateIngredient}
+          requiredLabel={mode === 'create' ? '*' : ''}
+        />
 
-          <div className="space-y-3">
-            {ingredients.map((ingredient, index) => (
-              <div
-                key={index}
-                className="grid gap-2 rounded-lg border bg-muted/30 p-3 md:grid-cols-4"
-              >
-                <Input
-                  placeholder="Name"
-                  value={ingredient.name}
-                  onChange={(e) =>
-                    updateIngredient(index, 'name', e.target.value)
-                  }
-                />
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="Quantity"
-                  value={ingredient.quantity}
-                  onChange={(e) =>
-                    updateIngredient(index, 'quantity', e.target.value)
-                  }
-                />
-                <Input
-                  placeholder="Measure unit"
-                  value={ingredient.measureUnit}
-                  onChange={(e) =>
-                    updateIngredient(index, 'measureUnit', e.target.value)
-                  }
-                />
-                <div className="flex gap-2">
-                  <Input
-                    className="w-full"
-                    placeholder="Note (optional)"
-                    value={ingredient.note}
-                    onChange={(e) =>
-                      updateIngredient(index, 'note', e.target.value)
-                    }
-                  />
-                  {ingredients.length > 1 ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => removeIngredient(index)}
-                    >
-                      ✕
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <SpicesSection
+          spices={spices}
+          onAdd={addSpice}
+          onRemove={removeSpice}
+          onChange={updateSpice}
+        />
 
         <div className="space-y-3">
           <div className="flex flex-wrap justify-end gap-2">

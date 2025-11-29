@@ -15,7 +15,7 @@ const HomePage = () => {
   const { user, loading } = useCurrentUser();
   if (loading)
     return (
-      <div className="flex items-center gap-6">
+      <div className="flex min-h-screen items-center justify-center">
         <Spinner className="size-8" />
       </div>
     );

@@ -1,3 +1,12 @@
+export type RecipeTag =
+  | string
+  | {
+      id?: string | number;
+      name?: string;
+      tag?: string;
+      label?: string;
+    };
+
 export type Recipe = {
   id: string;
   authorId: number;
@@ -17,7 +26,11 @@ export type Recipe = {
     measureUnit: string;
     note?: string;
   }[];
-  tags: string[];
+  spices?: {
+    name: string;
+    note?: string;
+  }[];
+  tags: RecipeTag[];
   isFavorite?: boolean;
   isPublic: boolean;
   status: 'draft' | 'published' | 'archived';

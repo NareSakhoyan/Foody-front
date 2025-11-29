@@ -2,24 +2,29 @@
 
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
+import RecipeForm from '@/components/Recipe/RecipeForm';
 import type { Recipe } from '@/lib/types/recipe';
+import { getTagKey, getTagLabel } from '@/lib/utils/tags';
 import { fetchRecipe, favoriteRecipe } from '@/lib/api/recipes';
 import { useApi } from '@/hooks/useApi';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Heart, ArrowLeft } from 'lucide-react';
 
 const RecipeDetailPage = () => {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { callApi } = useApi();
+  const { user } = useCurrentUser();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     const loadRecipe = async () => {
@@ -54,6 +59,13 @@ const RecipeDetailPage = () => {
     }
   };
 
+  const canEdit = useMemo(() => Boolean(user), [user]);
+  const handleEditSuccess = (updated: Recipe) => {
+    setRecipe(updated);
+    setEditing(false);
+  };
+  const handleEditCancel = () => setEditing(false);
+
   return (
     <div>
       <Header />
@@ -83,7 +95,7 @@ const RecipeDetailPage = () => {
           </div>
         ) : null}
 
-        {recipe ? (
+        {recipe && !editing ? (
           <article className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -92,27 +104,44 @@ const RecipeDetailPage = () => {
                   {recipe.shortDescription || 'No description provided.'}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  {recipe.tags?.map((tag) => (
-                    <Badge key={tag} variant="outline">
-                      #{tag}
-                    </Badge>
-                  ))}
+                  {recipe.tags?.map((tag, idx) => {
+                    const label = getTagLabel(tag);
+                    if (!label) return null;
+                    return (
+                      <Badge key={getTagKey(tag, idx)} variant="outline">
+                        #{label}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
-              <Button
-                type="button"
-                variant={recipe.isFavorite ? 'default' : 'outline'}
-                size="sm"
-                onClick={handleFavoriteToggle}
-                disabled={favoriteLoading}
-                className="cursor-pointer"
-              >
-                <Heart
-                  className="size-4"
-                  fill={recipe.isFavorite ? 'currentColor' : 'none'}
-                />
-                {recipe.isFavorite ? 'Favorited' : 'Favorite'}
-              </Button>
+              <div className="flex items-center gap-2">
+                {canEdit ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditing(true)}
+                    className="cursor-pointer"
+                  >
+                    Edit
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant={recipe.isFavorite ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={handleFavoriteToggle}
+                  disabled={favoriteLoading}
+                  className="cursor-pointer"
+                >
+                  <Heart
+                    className="size-4"
+                    fill={recipe.isFavorite ? 'currentColor' : 'none'}
+                  />
+                  {recipe.isFavorite ? 'Favorited' : 'Favorite'}
+                </Button>
+              </div>
             </div>
 
             {recipe.imageUrl ? (
@@ -174,7 +203,30 @@ const RecipeDetailPage = () => {
                 </ul>
               </section>
             ) : null}
+            {recipe.spices?.length ? (
+              <section className="space-y-2">
+                <h2 className="text-lg font-semibold">Spices</h2>
+                <ul className="space-y-1 text-muted-foreground">
+                  {recipe.spices.map((spice, idx) => (
+                    <li key={`${spice.name || 'spice'}-${idx}`}>
+                      {spice.name}
+                      {spice.note ? ` — ${spice.note}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
           </article>
+        ) : null}
+        {recipe && editing ? (
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
+            <RecipeForm
+              mode="edit"
+              initialData={recipe}
+              onSuccess={handleEditSuccess}
+              onCancel={handleEditCancel}
+            />
+          </div>
         ) : null}
       </div>
     </div>

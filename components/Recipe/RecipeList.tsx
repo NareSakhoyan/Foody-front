@@ -1,9 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import type { Recipe } from '@/lib/types/recipe';
-import { deleteRecipe, favoriteRecipe, fetchRecipes } from '@/lib/api/recipes';
+import {
+  deleteRecipe,
+  favoriteRecipe,
+  fetchRecipes,
+  fetchRecipeTags,
+} from '@/lib/api/recipes';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,9 +20,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { RecipeFilters, type SortOption } from './RecipeFilters';
+import { RecipeFilters } from './RecipeFilters';
 import { RecipeCard } from './RecipeCard';
 import { useApi } from '@/hooks/useApi';
+import { getTagLabel } from '@/lib/utils/tags';
 
 type RecipeListProps = {
   refreshKey?: number;
@@ -40,12 +47,15 @@ const RecipeList = ({
   onDeleted,
 }: RecipeListProps) => {
   const { callApi } = useApi();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState<string | null>(null);
@@ -53,6 +63,50 @@ const RecipeList = ({
   const [deleteTarget, setDeleteTarget] = useState<Recipe | null>(null);
   const [tagChoice, setTagChoice] = useState<string>('');
   const [showTagPicker, setShowTagPicker] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(12);
+  const [total, setTotal] = useState(0);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+
+  const tagParam = useMemo(() => {
+    const tags = Array.from(selectedTags)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    return tags.length ? tags.join(',') : undefined;
+  }, [selectedTags]);
+
+  // Initialize state from URL params
+  useEffect(() => {
+    const q = searchParams.get('q') ?? '';
+    const tag = searchParams.get('tag') ?? '';
+    const tags = tag
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const fav = searchParams.get('fav') === '1';
+    const pageParam = Number(searchParams.get('page')) || 1;
+    setSearch(q);
+    setDebouncedSearch(q);
+    setOnlyFavorites(fav);
+    setSelectedTags(tags.length ? new Set(tags) : new Set());
+    setPage(pageParam);
+  }, [searchParams]);
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (tagParam) params.set('tag', tagParam);
+    if (onlyFavorites) params.set('fav', '1');
+    if (page > 1) params.set('page', String(page));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [debouncedSearch, onlyFavorites, page, pathname, router, tagParam]);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,10 +114,18 @@ const RecipeList = ({
     const loadRecipes = async () => {
       setLoading(true);
       setError(null);
+      const path = onlyFavorites ? '/recipes/favorites' : endpoint;
       try {
-        const data = await fetchRecipes(callApi, endpoint);
+        const data = await fetchRecipes(callApi, path, {
+          page,
+          pageSize,
+          q: debouncedSearch || undefined,
+          tag: tagParam,
+          status: includeDrafts ? undefined : 'published',
+        });
         if (!isMounted) return;
-        setRecipes(data);
+        setRecipes(data.items);
+        setTotal(data.total);
       } catch (err) {
         if (!isMounted) return;
         setError('Failed to load recipes. Please try again.');
@@ -73,79 +135,60 @@ const RecipeList = ({
       }
     };
 
-    loadRecipes();
+    void loadRecipes();
     return () => {
       isMounted = false;
     };
-  }, [callApi, endpoint, refreshKey]);
+  }, [
+    callApi,
+    endpoint,
+    includeDrafts,
+    onlyFavorites,
+    page,
+    pageSize,
+    refreshKey,
+    debouncedSearch,
+    tagParam,
+  ]);
 
-  const visibleRecipes = useMemo(
-    () =>
-      includeDrafts ? recipes : recipes.filter((r) => r.status !== 'draft'),
-    [includeDrafts, recipes],
-  );
+  useEffect(() => {
+    let isMounted = true;
+    const loadTags = async () => {
+      try {
+        const tags = await fetchRecipeTags(callApi);
+        if (!isMounted) return;
+        const normalized = (tags || [])
+          .map((tag) => getTagLabel(tag))
+          .map((t) => t.trim())
+          .filter((t) => t.length);
+        setAvailableTags(Array.from(new Set(normalized)));
+      } catch (err) {
+        console.error('Failed to load tags', err);
+      }
+    };
+    void loadTags();
+    return () => {
+      isMounted = false;
+    };
+  }, [callApi]);
 
-  const { allTags, quickTags } = useMemo(() => {
-    const counts = new Map<string, number>();
-    visibleRecipes.forEach((r) =>
-      r.tags?.forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1)),
-    );
-    const sortedByCount = Array.from(counts.entries()).sort((a, b) => {
-      if (a[1] === b[1]) return a[0].localeCompare(b[0]);
-      return b[1] - a[1];
-    });
-    const allTags = Array.from(counts.keys()).sort((a, b) =>
+  const { quickTags } = useMemo(() => {
+    const normalized = availableTags.map((t) => t.trim()).filter(Boolean);
+    const unique = Array.from(new Set(normalized)).sort((a, b) =>
       a.localeCompare(b),
     );
-    const quickTags = sortedByCount.slice(0, 10).map(([tag]) => tag);
-    return { allTags, quickTags };
-  }, [visibleRecipes]);
+    const quickTags = unique.slice(0, 10);
+    return { quickTags };
+  }, [availableTags]);
 
-  const filteredRecipes = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    const tags = Array.from(selectedTags);
-    const filtered = visibleRecipes.filter((r) => {
-      if (onlyFavorites && !r.isFavorite) return false;
-      if (term) {
-        const inText =
-          r.name.toLowerCase().includes(term) ||
-          (r.shortDescription ?? '').toLowerCase().includes(term) ||
-          r.tags?.some((t) => t.toLowerCase().includes(term));
-        if (!inText) return false;
-      }
-      if (tags.length && !tags.every((t) => r.tags?.includes(t))) return false;
-      return true;
-    });
-
-    return filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'prep':
-          return (
-            (a.prepTimeMinutes ?? Infinity) - (b.prepTimeMinutes ?? Infinity)
-          );
-        case 'cook':
-          return (
-            (a.cookTimeMinutes ?? Infinity) - (b.cookTimeMinutes ?? Infinity)
-          );
-        default:
-          return (
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-          );
-      }
-    });
-  }, [onlyFavorites, search, selectedTags, sortBy, visibleRecipes]);
-
-  const hasFiltered = useMemo(
-    () => filteredRecipes.length > 0,
-    [filteredRecipes],
-  );
-  const hasAny = useMemo(() => visibleRecipes.length > 0, [visibleRecipes]);
+  const hasAny = useMemo(() => total > 0, [total]);
 
   const availableTagChoices = useMemo(
-    () => allTags.filter((t) => !selectedTags.has(t) && !quickTags.includes(t)),
-    [allTags, quickTags, selectedTags],
+    () =>
+      availableTags.filter(
+        (t) => !selectedTags.has(t) && !quickTags.includes(t),
+      ),
+    [availableTags, quickTags, selectedTags],
   );
 
   const toggleTag = (tag: string) => {
@@ -158,14 +201,7 @@ const RecipeList = ({
       }
       return next;
     });
-  };
-
-  const clearFilters = () => {
-    setSearch('');
-    setSelectedTags(new Set());
-    setOnlyFavorites(false);
-    setSortBy('recent');
-    setTagChoice('');
+    setPage(1);
   };
 
   useEffect(() => {
@@ -184,6 +220,7 @@ const RecipeList = ({
     setSelectedTags((prev) => new Set(prev).add(tagToAdd));
     setTagChoice('');
     setShowTagPicker(false);
+    setPage(1);
   };
 
   const handleDeleteConfirm = async () => {
@@ -222,34 +259,22 @@ const RecipeList = ({
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="h-24 w-full animate-pulse rounded-xl bg-muted" />
-        <div className="h-24 w-full animate-pulse rounded-xl bg-muted" />
-        <div className="h-24 w-full animate-pulse rounded-xl bg-muted" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-        {error}
-      </div>
-    );
-  }
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="space-y-4">
       <RecipeFilters
         search={search}
-        onSearchChange={setSearch}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setPage(1);
+        }}
         allowFavorite={allowFavorite}
         onlyFavorites={onlyFavorites}
-        onToggleFavorites={() => setOnlyFavorites((prev) => !prev)}
+        onToggleFavorites={() => {
+          setOnlyFavorites((prev) => !prev);
+          setPage(1);
+        }}
         selectedTags={selectedTags}
         quickTags={quickTags}
         onToggleTag={toggleTag}
@@ -259,46 +284,70 @@ const RecipeList = ({
         showTagPicker={showTagPicker}
         onToggleTagPicker={(open) => setShowTagPicker(open)}
         onAddTag={addTagFilter}
-        recipes={visibleRecipes}
       />
 
-      {!hasAny ? (
+      {error ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : loading ? (
+        <div className="flex flex-col gap-4">
+          <div className="h-24 w-full animate-pulse rounded-xl bg-gray-200" />
+          <div className="h-24 w-full animate-pulse rounded-xl bg-gray-200" />
+          <div className="h-24 w-full animate-pulse rounded-xl bg-gray-200" />
+        </div>
+      ) : !hasAny ? (
         <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
           No recipes yet. Add your first one to see it here.
         </div>
-      ) : !hasFiltered ? (
-        <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
-          No recipes match your filters.
-          <div className="mt-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-            >
-              Clear filters
-            </Button>
-          </div>
-        </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {filteredRecipes.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              allowFavorite={allowFavorite}
-              favoriteLoading={favoriteLoading === recipe.id}
-              onToggleFavorite={handleFavoriteToggle}
-              allowEdit={allowEdit}
-              onEdit={onEdit}
-              allowDelete={allowDelete}
-              onDelete={(r) => {
-                setDeleteTarget(r);
-                setDeleteDialogOpen(true);
-              }}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            {recipes.map((recipe) => (
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                allowFavorite={allowFavorite}
+                favoriteLoading={favoriteLoading === recipe.id}
+                onToggleFavorite={handleFavoriteToggle}
+                allowEdit={allowEdit}
+                onEdit={onEdit}
+                allowDelete={allowDelete}
+                onDelete={(r) => {
+                  setDeleteTarget(r);
+                  setDeleteDialogOpen(true);
+                }}
+              />
+            ))}
+          </div>
+          {totalPages > 1 ? (
+            <div className="flex items-center justify-end gap-3 text-sm text-muted-foreground">
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Prev
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </>
       )}
       <AlertDialog
         open={deleteDialogOpen}

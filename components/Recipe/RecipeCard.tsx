@@ -1,8 +1,11 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Recipe } from '@/lib/types/recipe';
+import { getTagKey, getTagLabel } from '@/lib/utils/tags';
 import { Heart, Pencil, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -35,10 +38,7 @@ export const RecipeCard = ({
   return (
     <article className="group rounded-xl border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       <div className="relative mb-3 overflow-hidden rounded-lg">
-        <Link
-          href={`/recipes/${recipe.id}`}
-          className="group/block relative block"
-        >
+        <Link href={`/recipes/${recipe.id}`} className="group/block relative block">
           {recipe.imageUrl ? (
             <div className="relative h-44 w-full bg-muted">
               <Image
@@ -88,25 +88,39 @@ export const RecipeCard = ({
           </Link>
         </div>
         <div className="flex flex-col items-end gap-2">
-          {allowEdit && onEdit ? (
-            <Button
-              size="icon-sm"
-              variant="outline"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(recipe);
-              }}
-              aria-label="Edit recipe"
-            >
-              <Pencil className="size-4" />
-            </Button>
-          ) : null}
           {recipe.servings ? (
             <Badge variant="secondary" className="shrink-0">
               Serves {recipe.servings}
             </Badge>
           ) : null}
-          {allowDelete && onDelete ? (
+          {allowEdit && onEdit ? (
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon-sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(recipe);
+                }}
+                aria-label="Edit recipe"
+              >
+                <Pencil className="size-4" />
+              </Button>
+              {allowDelete && onDelete ? (
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(recipe);
+                  }}
+                  aria-label="Delete recipe"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              ) : null}
+            </div>
+          ) : allowDelete && onDelete ? (
             <Button
               size="icon-sm"
               variant="outline"
@@ -129,11 +143,15 @@ export const RecipeCard = ({
         {recipe.cookTimeMinutes ? (
           <Badge variant="outline">Cook: {recipe.cookTimeMinutes} min</Badge>
         ) : null}
-        {recipe.tags?.slice(0, 4).map((tag) => (
-          <Badge key={tag} variant="outline">
-            #{tag}
-          </Badge>
-        ))}
+        {recipe.tags?.slice(0, 4).map((tag, idx) => {
+          const label = getTagLabel(tag);
+          if (!label) return null;
+          return (
+            <Badge key={getTagKey(tag, idx)} variant="outline">
+              #{label}
+            </Badge>
+          );
+        })}
         {recipe.tags?.length > 4 ? (
           <Badge variant="outline">+{recipe.tags.length - 4} more</Badge>
         ) : null}
@@ -145,9 +163,7 @@ export const RecipeCard = ({
           <p className="line-clamp-2 text-muted-foreground">
             {recipe.ingredients
               .slice(0, 3)
-              .map(
-                (item) => `${item.quantity} ${item.measureUnit} ${item.name}`,
-              )
+              .map((item) => `${item.quantity} ${item.measureUnit} ${item.name}`)
               .join(', ')}
             {recipe.ingredients.length > 3 ? '…' : ''}
           </p>
