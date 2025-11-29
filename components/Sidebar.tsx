@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/', label: 'Discover' },
   { href: '/my-recipes', label: 'My recipes' },
+  { href: '/pantry', label: 'Pantry' },
 ];
 
 const Sidebar = () => {

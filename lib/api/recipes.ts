@@ -1,4 +1,5 @@
 import type { Recipe } from '@/lib/types/recipe';
+import type { PantryRecommendation } from '@/components/Pantry/pantry-utils';
 
 type CallApi = <T>(path: string, options?: RequestInit) => Promise<T>;
 
@@ -12,6 +13,7 @@ export type RecipeListResponse = {
 export type RecipeListQuery = {
   page?: number;
   pageSize?: number;
+  limit?: number;
   q?: string;
   tag?: string;
   status?: string;
@@ -100,3 +102,12 @@ export const favoriteRecipe = (
   callApi(`/recipes/${id}/favorite`, {
     method: favorite ? 'POST' : 'DELETE',
   });
+
+export const fetchRecommendations = (
+  callApi: CallApi,
+  query?: RecipeListQuery,
+  limit = 5,
+) =>
+  callApi<PantryRecommendation[]>(
+    `/recipes/recommendations${buildQuery({ ...query, limit })}`,
+  );

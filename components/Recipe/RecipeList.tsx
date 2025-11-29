@@ -10,6 +10,7 @@ import {
   fetchRecipes,
   fetchRecipeTags,
 } from '@/lib/api/recipes';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -128,7 +129,9 @@ const RecipeList = ({
         setTotal(data.total);
       } catch (err) {
         if (!isMounted) return;
-        setError('Failed to load recipes. Please try again.');
+        const message = 'Failed to load recipes. Please try again.';
+        setError(message);
+        toast.error(message);
         console.error('Error fetching recipes', err);
       } finally {
         if (isMounted) setLoading(false);
@@ -163,6 +166,7 @@ const RecipeList = ({
           .filter((t) => t.length);
         setAvailableTags(Array.from(new Set(normalized)));
       } catch (err) {
+        toast.error('Failed to load tags.');
         console.error('Failed to load tags', err);
       }
     };
@@ -230,7 +234,9 @@ const RecipeList = ({
       await deleteRecipe(callApi, deleteTarget.id);
       setRecipes((prev) => prev.filter((r) => r.id !== deleteTarget.id));
       onDeleted?.();
+      toast.success('Recipe deleted.');
     } catch (err) {
+      toast.error('Failed to delete recipe. Please try again.');
       console.error('Failed to delete recipe', err);
       setError('Failed to delete recipe. Please try again.');
     } finally {
@@ -251,7 +257,11 @@ const RecipeList = ({
           r.id === recipe.id ? { ...r, isFavorite: nextState } : r,
         ),
       );
+      toast.success(
+        nextState ? 'Added to favorites.' : 'Removed from favorites.',
+      );
     } catch (err) {
+      toast.error('Failed to update favorites. Please try again.');
       console.error('Failed to toggle favorite', err);
       setError('Failed to update favorites. Please try again.');
     } finally {
