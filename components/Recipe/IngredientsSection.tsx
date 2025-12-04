@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { IngredientInput } from './recipe-form-utils';
+import { MeasureUnitSelect } from './MeasureUnitSelect';
 
 type IngredientsSectionProps = {
   ingredients: IngredientInput[];
@@ -50,10 +51,9 @@ function IngredientsSection({
               value={ingredient.quantity}
               onChange={(e) => onChange(index, 'quantity', e.target.value)}
             />
-            <Input
-              placeholder="Measure unit"
+            <MeasureUnitSelect
               value={ingredient.measureUnit}
-              onChange={(e) => onChange(index, 'measureUnit', e.target.value)}
+              onChange={(val) => onChange(index, 'measureUnit', val)}
             />
             <div className="flex gap-2">
               <Input

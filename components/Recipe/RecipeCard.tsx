@@ -8,6 +8,7 @@ import type { Recipe } from '@/lib/types/recipe';
 import { getTagKey, getTagLabel } from '@/lib/utils/tags';
 import { Heart, Pencil, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 type RecipeCardProps = {
   recipe: Recipe;
@@ -18,6 +19,7 @@ type RecipeCardProps = {
   onEdit?: (recipe: Recipe) => void;
   allowDelete?: boolean;
   onDelete?: (recipe: Recipe) => void;
+  className?: string;
 };
 
 export const RecipeCard = ({
@@ -29,6 +31,7 @@ export const RecipeCard = ({
   onEdit,
   allowDelete,
   onDelete,
+  className,
 }: RecipeCardProps) => {
   const fallbackInitial = useMemo(
     () => (recipe.name?.[0] || 'R').toUpperCase(),
@@ -36,25 +39,28 @@ export const RecipeCard = ({
   );
 
   return (
-    <article className="group rounded-xl border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-      <div className="relative mb-3 overflow-hidden rounded-lg">
+    <article
+      className={cn(
+        'group flex h-full min-h-[500px] flex-col rounded-xl border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md',
+        className,
+      )}
+    >
+      <div className="relative mb-3 h-48 w-full overflow-hidden rounded-lg bg-muted md:h-52">
         <Link
           href={`/recipes/${recipe.id}`}
-          className="group/block relative block"
+          className="relative block h-full w-full"
         >
           {recipe.imageUrl ? (
-            <div className="relative h-44 w-full bg-muted">
-              <Image
-                src={recipe.imageUrl}
-                alt={recipe.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover transition duration-300 group-hover:scale-105"
-                priority={false}
-              />
-            </div>
+            <Image
+              src={recipe.imageUrl}
+              alt={recipe.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover transition duration-300 group-hover:scale-105"
+              priority={false}
+            />
           ) : (
-            <div className="flex h-44 w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50 text-4xl font-semibold text-muted-foreground/70">
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-muted to-muted/50 text-4xl font-semibold text-muted-foreground/70">
               {fallbackInitial}
             </div>
           )}
@@ -161,7 +167,7 @@ export const RecipeCard = ({
       </div>
 
       {recipe.ingredients?.length ? (
-        <div className="mt-3 space-y-1 text-sm">
+        <div className="mt-auto pt-3 space-y-1 text-sm">
           <p className="font-medium text-foreground">Key ingredients</p>
           <p className="line-clamp-2 text-muted-foreground">
             {recipe.ingredients

@@ -144,7 +144,7 @@ const PantryPage = () => {
   const totalTracked = useMemo(() => items.length, [items]);
 
   return (
-    <div>
+    <div className="min-h-screen overflow-y-auto">
       <Header />
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 md:flex-row">
         <Sidebar />
@@ -169,7 +169,10 @@ const PantryPage = () => {
 
           <div className="grid gap-4 md:grid-cols-2">
             <PantryQuickAdd onAdd={(input) => void addItem(input)} />
-            <PantryStaplesPreset onAddMany={(inputs) => void addMany(inputs)} />
+            <PantryStaplesPreset
+              existingItems={items}
+              onAddMany={(inputs) => void addMany(inputs)}
+            />
           </div>
 
           <PantryBatchAdd onAddMany={(inputs) => void addMany(inputs)} />

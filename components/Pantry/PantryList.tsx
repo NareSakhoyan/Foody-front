@@ -22,7 +22,7 @@ function PantryList({ items, onRemove, onToggleFinished }: PantryListProps) {
             </span>
           </h3>
         </div>
-        <div className="divide-y">
+        <div className="divide-y h-[50vh] overflow-y-auto pr-1">
           {active.length ? (
             active.map((item) => (
               <div

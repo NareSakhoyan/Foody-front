@@ -1,4 +1,10 @@
 import type { Recipe } from '@/lib/types/recipe';
+export {
+  commonIngredients,
+  staplePreset,
+  staplePresetDetailed,
+  type StapleItem,
+} from '@/constants/pantry';
 
 export type PantryItem = {
   id: number;
@@ -6,37 +12,6 @@ export type PantryItem = {
   quantity: string | null;
   isFinished?: boolean;
 };
-
-export const commonIngredients = [
-  'Salt',
-  'Pepper',
-  'Olive oil',
-  'Garlic',
-  'Onion',
-  'Chicken breast',
-  'Eggs',
-  'Milk',
-  'Butter',
-  'Flour',
-  'Sugar',
-  'Rice',
-  'Pasta',
-  'Tomatoes',
-  'Bell pepper',
-  'Cumin',
-  'Paprika',
-  'Soy sauce',
-];
-
-export const staplePreset = [
-  'Salt',
-  'Pepper',
-  'Olive oil',
-  'Sugar',
-  'Flour',
-  'Rice',
-  'Pasta',
-];
 
 export type CreatePantryInput = {
   name: string;

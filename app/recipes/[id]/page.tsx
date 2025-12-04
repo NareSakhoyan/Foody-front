@@ -94,9 +94,11 @@ const RecipeDetailPage = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <Spinner className="size-5" />
-            Loading recipe…
+          <div className="flex min-h-[40vh] w-full items-center justify-center">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Spinner className="size-5" />
+              Loading recipe…
+            </div>
           </div>
         ) : null}
 
@@ -201,32 +203,34 @@ const RecipeDetailPage = () => {
               </section>
             ) : null}
 
-            {recipe.ingredients?.length ? (
-              <section className="space-y-2">
-                <h2 className="text-lg font-semibold">Ingredients</h2>
-                <ul className="space-y-1 text-muted-foreground">
-                  {recipe.ingredients.map((ing, idx) => (
-                    <li key={`${ing.name}-${idx}`}>
-                      {ing.quantity} {ing.measureUnit} {ing.name}
-                      {ing.note ? ` — ${ing.note}` : ''}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-            {recipe.spices?.length ? (
-              <section className="space-y-2">
-                <h2 className="text-lg font-semibold">Spices</h2>
-                <ul className="space-y-1 text-muted-foreground">
-                  {recipe.spices.map((spice, idx) => (
-                    <li key={`${spice.name || 'spice'}-${idx}`}>
-                      {spice.name}
-                      {spice.note ? ` — ${spice.note}` : ''}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
+            <div className="flex flex-col gap-6 sm:flex-row sm:flex-wrap">
+              {recipe.ingredients?.length ? (
+                <section className="flex-1 min-w-[260px] space-y-2">
+                  <h2 className="text-lg font-semibold">Ingredients</h2>
+                  <ul className="space-y-1 text-muted-foreground">
+                    {recipe.ingredients.map((ing, idx) => (
+                      <li key={`${ing.name}-${idx}`}>
+                        {ing.quantity} {ing.measureUnit} {ing.name}
+                        {ing.note ? ` — ${ing.note}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+              {recipe.spices?.length ? (
+                <section className="flex-1 min-w-[260px] space-y-2">
+                  <h2 className="text-lg font-semibold">Spices</h2>
+                  <ul className="space-y-1 text-muted-foreground">
+                    {recipe.spices.map((spice, idx) => (
+                      <li key={`${spice.name || 'spice'}-${idx}`}>
+                        {spice.name}
+                        {spice.note ? ` — ${spice.note}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+            </div>
           </article>
         ) : null}
         {recipe && editing ? (

@@ -1,0 +1,17 @@
+export const MEASURE_UNITS = [
+  { value: 'tsp', label: 'Teaspoon (tsp)' },
+  { value: 'tbsp', label: 'Tablespoon (tbsp)' },
+  { value: 'cup', label: 'Cup' },
+  { value: 'g', label: 'Gram (g)' },
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'ml', label: 'Milliliter (ml)' },
+  { value: 'l', label: 'Liter (l)' },
+  { value: 'oz', label: 'Ounce (oz)' },
+  { value: 'lb', label: 'Pound (lb)' },
+  { value: 'piece', label: 'Piece' },
+  { value: 'slice', label: 'Slice' },
+  { value: 'clove', label: 'Clove' },
+  { value: 'pinch', label: 'Pinch' },
+  { value: 'dash', label: 'Dash' },
+  { value: 'can', label: 'Can' },
+];
