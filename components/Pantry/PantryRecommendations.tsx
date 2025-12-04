@@ -81,7 +81,10 @@ function PantryRecommendations({
                   key={item.recipe?.id ?? `rec-${idx}`}
                   className="min-w-[260px] w-[65%] max-w-[400px] shrink-0 snap-start space-y-4 sm:w-[60%] lg:w-[50%]"
                 >
-                  <RecipeCard recipe={item.recipe} className="h-[500px] min-h-[500px]" />
+                  <RecipeCard
+                    recipe={item.recipe}
+                    className="h-[500px] min-h-[500px]"
+                  />
                   <div className="space-y-2 text-xs text-muted-foreground">
                     <div className="text-sm font-semibold text-primary">
                       Match{' '}

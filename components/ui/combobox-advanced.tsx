@@ -9,7 +9,11 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 type Option = {
@@ -95,10 +99,14 @@ function ComboboxAdvanced({
           )}
           onClick={() => setOpen((prev) => !prev)}
         >
-          <span className={selected ? 'text-foreground' : 'text-muted-foreground'}>
+          <span
+            className={selected ? 'text-foreground' : 'text-muted-foreground'}
+          >
             {selected ? selected.label : placeholder}
           </span>
-          <span aria-hidden className="text-xs text-muted-foreground">Enter</span>
+          <span aria-hidden className="text-xs text-muted-foreground">
+            Enter
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent

@@ -18,7 +18,8 @@ function MeasureUnitSelect({
   autoFocus = true,
 }: MeasureUnitSelectProps) {
   const options = useMemo(() => {
-    const hasCustomValue = value && !MEASURE_UNITS.some((u) => u.value === value);
+    const hasCustomValue =
+      value && !MEASURE_UNITS.some((u) => u.value === value);
     if (hasCustomValue) {
       return [{ value, label: value }, ...MEASURE_UNITS];
     }

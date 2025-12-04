@@ -7,7 +7,10 @@ type PantryStaplesPresetProps = {
   existingItems?: PantryItem[];
 };
 
-function PantryStaplesPreset({ onAddMany, existingItems = [] }: PantryStaplesPresetProps) {
+function PantryStaplesPreset({
+  onAddMany,
+  existingItems = [],
+}: PantryStaplesPresetProps) {
   const existingNames = useMemo(() => {
     return new Set(
       existingItems
@@ -37,7 +40,9 @@ function PantryStaplesPreset({ onAddMany, existingItems = [] }: PantryStaplesPre
   const buildPayloads = (items = visibleStaples) =>
     items.map((item) => ({
       name: item.name,
-      quantity: item.measureUnit ? `${item.quantity} ${item.measureUnit}` : item.quantity,
+      quantity: item.measureUnit
+        ? `${item.quantity} ${item.measureUnit}`
+        : item.quantity,
     }));
 
   const handleAddSingle = (name: string) => {
