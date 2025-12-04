@@ -64,15 +64,14 @@ function PantryRecommendations({
         ) : null}
       </div>
 
-      <div className="mt-3 space-y-3 overflow-hidden max-w-4xl min-h-[540px]">
+      <div className="mt-3 space-y-3 overflow-hidden max-w-4xl h-192">
         {loading ? (
-          <div className="space-y-2">
-            <div className="text-sm text-muted-foreground">
-              Loading recommendations…
-            </div>
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+            <Spinner className="size-5" />
+            Loading recommendations…
           </div>
         ) : normalizedRecs.length ? (
-          <div className="flex gap-6 overflow-x-auto no-scrollbar pt-4">
+          <div className="flex h-full gap-6 overflow-x-auto no-scrollbar pt-4">
             {normalizedRecs.map((item, idx) => {
               const matched = item.matchedIngredients;
               const missing = item.missingIngredients;
