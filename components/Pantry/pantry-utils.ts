@@ -1,10 +1,10 @@
 import type { Recipe } from '@/lib/types/recipe';
-export {
+import {
   commonIngredients,
   staplePreset,
   staplePresetDetailed,
-  type StapleItem,
 } from '@/constants/pantry';
+export type { StapleItem } from '@/constants/pantry';
 
 export type PantryItem = {
   id: number;
@@ -43,3 +43,34 @@ export type PantryRecommendation = {
   matchedIngredients?: string[];
   missingIngredients?: string[];
 } & Partial<Recipe>;
+
+type StapleCategory =
+  | 'spices'
+  | 'grains'
+  | 'proteins'
+  | 'dairy'
+  | 'produce'
+  | 'baking'
+  | 'condiments'
+  | 'canned'
+  | 'oils'
+  | 'snacks'
+  | 'misc'
+  | 'uncategorized';
+
+const stapleCategoryMap: Record<string, StapleCategory> =
+  staplePresetDetailed.reduce(
+    (acc, item) => {
+      acc[item.name.toLowerCase()] = item.category as StapleCategory;
+      return acc;
+    },
+    {} as Record<string, StapleCategory>,
+  );
+
+export const getPantryCategory = (name?: string | null): StapleCategory => {
+  if (!name) return 'uncategorized';
+  const key = name.trim().toLowerCase();
+  return stapleCategoryMap[key] ?? 'uncategorized';
+};
+
+export { commonIngredients, staplePreset, staplePresetDetailed };
