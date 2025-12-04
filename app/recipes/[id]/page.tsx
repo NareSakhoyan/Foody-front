@@ -21,6 +21,7 @@ const RecipeDetailPage = () => {
   const router = useRouter();
   const { callApi } = useApi();
   const { user } = useCurrentUser();
+  const currentUserId = user?.id ? String(user.id) : null;
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +67,10 @@ const RecipeDetailPage = () => {
     }
   };
 
-  const canEdit = useMemo(() => Boolean(user), [user]);
+  const canEdit = useMemo(() => {
+    if (!recipe || !currentUserId) return false;
+    return String(recipe.authorId) === currentUserId;
+  }, [currentUserId, recipe]);
   const handleEditSuccess = (updated: Recipe) => {
     setRecipe(updated);
     setEditing(false);

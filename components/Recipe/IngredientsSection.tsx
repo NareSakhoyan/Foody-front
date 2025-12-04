@@ -45,7 +45,6 @@ function IngredientsSection({
             />
             <Input
               type="number"
-              min={0}
               step="0.01"
               placeholder="Quantity"
               value={ingredient.quantity}

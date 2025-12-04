@@ -285,7 +285,7 @@ const RecipeForm = ({
   };
 
   const addIngredient = () => {
-    setIngredients((prev) => [...prev, { ...emptyIngredient }]);
+    setIngredients((prev) => [{ ...emptyIngredient }, ...prev]);
   };
 
   const removeIngredient = (index: number) => {

@@ -35,6 +35,7 @@ type RecipeListProps = {
   allowDelete?: boolean;
   allowFavorite?: boolean;
   onDeleted?: () => void;
+  currentUserId?: string | number;
 };
 
 const RecipeList = ({
@@ -46,6 +47,7 @@ const RecipeList = ({
   allowDelete = false,
   allowFavorite = false,
   onDeleted,
+  currentUserId,
 }: RecipeListProps) => {
   const { callApi } = useApi();
   const router = useRouter();
@@ -68,6 +70,10 @@ const RecipeList = ({
   const [pageSize] = useState(12);
   const [total, setTotal] = useState(0);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const normalizedUserId =
+    currentUserId === null || currentUserId === undefined
+      ? null
+      : String(currentUserId);
 
   const tagParam = useMemo(() => {
     const tags = Array.from(selectedTags)
@@ -313,22 +319,34 @@ const RecipeList = ({
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2">
-            {recipes.map((recipe) => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={recipe}
-                allowFavorite={allowFavorite}
-                favoriteLoading={favoriteLoading === recipe.id}
-                onToggleFavorite={handleFavoriteToggle}
-                allowEdit={allowEdit}
-                onEdit={onEdit}
-                allowDelete={allowDelete}
-                onDelete={(r) => {
-                  setDeleteTarget(r);
-                  setDeleteDialogOpen(true);
-                }}
-              />
-            ))}
+            {recipes.map((recipe) => {
+              const isOwner =
+                normalizedUserId !== null &&
+                String(recipe.authorId) === normalizedUserId;
+              const canEditRecipe = allowEdit && isOwner;
+              const canDeleteRecipe = allowDelete && isOwner;
+
+              return (
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  allowFavorite={allowFavorite}
+                  favoriteLoading={favoriteLoading === recipe.id}
+                  onToggleFavorite={handleFavoriteToggle}
+                  allowEdit={canEditRecipe}
+                  onEdit={canEditRecipe ? onEdit : undefined}
+                  allowDelete={canDeleteRecipe}
+                  onDelete={
+                    canDeleteRecipe
+                      ? (r) => {
+                          setDeleteTarget(r);
+                          setDeleteDialogOpen(true);
+                        }
+                      : undefined
+                  }
+                />
+              );
+            })}
           </div>
           {totalPages > 1 ? (
             <div className="flex items-center justify-end gap-3 text-sm text-muted-foreground">

@@ -67,6 +67,7 @@ const HomePage = () => {
             allowFavorite={!!user}
             allowEdit={false}
             allowDelete={false}
+            currentUserId={user?.id}
           />
         </main>
       </div>

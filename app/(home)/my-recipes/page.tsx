@@ -91,6 +91,7 @@ const MyRecipesPage = () => {
               allowEdit
               allowFavorite
               allowDelete
+              currentUserId={user?.id}
               onDeleted={handleSuccess}
               onEdit={(recipe) => {
                 setSelectedRecipe(recipe);
