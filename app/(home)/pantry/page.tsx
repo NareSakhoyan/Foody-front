@@ -8,11 +8,16 @@ import { PantryStaplesPreset } from '@/components/Pantry/PantryStaplesPreset';
 import { PantryBatchAdd } from '@/components/Pantry/PantryBatchAdd';
 import { PantryList } from '@/components/Pantry/PantryList';
 import { PantryRecommendations } from '@/components/Pantry/PantryRecommendations';
+import { ShoppingList } from '@/components/Pantry/ShoppingList';
 import {
   type CreatePantryInput,
   type PantryItem,
   type PantryRecommendation,
 } from '@/components/Pantry/pantry-utils';
+import {
+  type CreateShoppingItemInput,
+  type ShoppingItem,
+} from '@/components/Pantry/shopping-utils';
 import { useApi } from '@/hooks/useApi';
 import {
   fetchPantryItems,
@@ -20,8 +25,15 @@ import {
   deletePantryItem,
   clearPantryItems,
 } from '@/lib/api/pantry';
+import {
+  fetchShoppingItems,
+  createShoppingItem,
+  updateShoppingItem,
+  deleteShoppingItem,
+} from '@/lib/api/shopping-list';
 import { fetchRecommendations } from '@/lib/api/recipes';
 import { Spinner } from '@/components/ui/spinner';
+import { toast } from 'sonner';
 
 const PantryPage = () => {
   const { callApi } = useApi();
@@ -29,10 +41,16 @@ const PantryPage = () => {
   const [recommendations, setRecommendations] = useState<
     PantryRecommendation[]
   >([]);
+  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [recsLoading, setRecsLoading] = useState(false);
+  const [shoppingLoading, setShoppingLoading] = useState(true);
   const [clearing, setClearing] = useState<'active' | 'finished' | null>(null);
+  const [addingFinishedIds, setAddingFinishedIds] = useState<Set<number>>(
+    () => new Set(),
+  );
   const [error, setError] = useState<string | null>(null);
+  const [shoppingError, setShoppingError] = useState<string | null>(null);
 
   const loadPantry = useCallback(async () => {
     setLoading(true);
@@ -51,6 +69,24 @@ const PantryPage = () => {
   useEffect(() => {
     void loadPantry();
   }, [loadPantry]);
+
+  const loadShopping = useCallback(async () => {
+    setShoppingLoading(true);
+    setShoppingError(null);
+    try {
+      const data = await fetchShoppingItems(callApi);
+      setShoppingItems(data);
+    } catch (err) {
+      console.error('Failed to load shopping list', err);
+      setShoppingError('Failed to load shopping list.');
+    } finally {
+      setShoppingLoading(false);
+    }
+  }, [callApi]);
+
+  useEffect(() => {
+    void loadShopping();
+  }, [loadShopping]);
 
   const refreshRecommendations = useCallback(async () => {
     setRecsLoading(true);
@@ -130,16 +166,118 @@ const PantryPage = () => {
 
   const toggleFinished = async (item: PantryItem) => {
     try {
-      const updated = await upsertPantryItem(callApi, {
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        isFinished: !item.isFinished,
-      });
-      setItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+      if (!item.isFinished) {
+        await deletePantryItem(callApi, item.id, false);
+        void loadPantry();
+      } else {
+        const updated = await upsertPantryItem(callApi, {
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          isFinished: false,
+        });
+        setItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+      }
     } catch (err) {
       console.error('Failed to update pantry item', err);
       setError('Could not update pantry item.');
+    }
+  };
+
+  const addShoppingItem = async (input: CreateShoppingItemInput) => {
+    try {
+      const created = await createShoppingItem(callApi, input);
+      setShoppingItems((prev) => {
+        const byId = prev.findIndex((s) => s.id === created.id);
+        if (byId >= 0) {
+          const next = [...prev];
+          next[byId] = created;
+          return next;
+        }
+        const byName = prev.findIndex(
+          (s) =>
+            s.name.trim().toLowerCase() === created.name.trim().toLowerCase(),
+        );
+        if (byName >= 0) {
+          const next = [...prev];
+          next[byName] = created;
+          return next;
+        }
+        return [...prev, created];
+      });
+    } catch (err) {
+      console.error('Failed to add shopping item', err);
+      setShoppingError('Could not add shopping item.');
+    }
+  };
+
+  const togglePurchased = async (item: ShoppingItem) => {
+    try {
+      const updated = await updateShoppingItem(callApi, item.id, {
+        isPurchased: !item.isPurchased,
+      });
+      setShoppingItems((prev) =>
+        updated.isPurchased
+          ? prev.filter((i) => i.id !== item.id)
+          : prev.map((i) => (i.id === item.id ? updated : i)),
+      );
+      if (!item.isPurchased && updated.isPurchased) {
+        // Backend adds to pantry; refresh pantry list to reflect it
+        void loadPantry();
+        toast.success(`${updated.name} added to pantry`);
+      }
+    } catch (err) {
+      console.error('Failed to update shopping item', err);
+      setShoppingError('Could not update shopping item.');
+    }
+  };
+
+  const removeShoppingItem = async (id: number) => {
+    try {
+      await deleteShoppingItem(callApi, id);
+      setShoppingItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error('Failed to remove shopping item', err);
+      setShoppingError('Could not remove shopping item.');
+    }
+  };
+
+  const addFinishedItemToShopping = async (item: PantryItem) => {
+    if (!item.isFinished || addingFinishedIds.has(item.id)) return;
+    setAddingFinishedIds((prev) => new Set(prev).add(item.id));
+    setShoppingError(null);
+    try {
+      const created = await createShoppingItem(callApi, {
+        name: item.name,
+        quantity: item.quantity ?? undefined,
+      });
+      setShoppingItems((prev) => {
+        const byId = prev.findIndex((s) => s.id === created.id);
+        if (byId >= 0) {
+          const next = [...prev];
+          next[byId] = created;
+          return next;
+        }
+        const byName = prev.findIndex(
+          (s) =>
+            s.name.trim().toLowerCase() === created.name.trim().toLowerCase(),
+        );
+        if (byName >= 0) {
+          const next = [...prev];
+          next[byName] = created;
+          return next;
+        }
+        return [...prev, created];
+      });
+    } catch (err) {
+      console.error('Failed to add finished item to shopping list', err);
+      setShoppingError('Could not add finished item to shopping list.');
+    } finally {
+      setAddingFinishedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
     }
   };
 
@@ -216,8 +354,25 @@ const PantryPage = () => {
               onClearFinished={() => void clearItems('finished')}
               clearingActive={clearing === 'active'}
               clearingFinished={clearing === 'finished'}
+              onAddFinishedToShopping={(item) =>
+                void addFinishedItemToShopping(item)
+              }
+              addingFinishedIds={addingFinishedIds}
             />
           )}
+
+          {shoppingError ? (
+            <div className="rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {shoppingError}
+            </div>
+          ) : null}
+          <ShoppingList
+            items={shoppingItems}
+            loading={shoppingLoading}
+            onAdd={(input) => void addShoppingItem(input)}
+            onTogglePurchased={(item) => void togglePurchased(item)}
+            onRemove={(id) => void removeShoppingItem(id)}
+          />
         </main>
       </div>
     </div>

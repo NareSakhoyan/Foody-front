@@ -12,6 +12,8 @@ type PantryListProps = {
   onClearFinished: () => void;
   clearingActive?: boolean;
   clearingFinished?: boolean;
+  onAddFinishedToShopping: (item: PantryItem) => void;
+  addingFinishedIds?: Set<number>;
 };
 
 function PantryList({
@@ -22,6 +24,8 @@ function PantryList({
   onClearFinished,
   clearingActive = false,
   clearingFinished = false,
+  onAddFinishedToShopping,
+  addingFinishedIds = new Set(),
 }: PantryListProps) {
   const active = items.filter((item) => !item.isFinished);
   const finished = items.filter((item) => item.isFinished);
@@ -109,9 +113,7 @@ function PantryList({
             variant="destructive"
             size="sm"
             disabled={tabData.count === 0 || isClearing}
-            onClick={
-              activeTab === 'active' ? onClearActive : onClearFinished
-            }
+            onClick={activeTab === 'active' ? onClearActive : onClearFinished}
           >
             {isClearing
               ? 'Clearing…'
@@ -127,6 +129,10 @@ function PantryList({
             buckets={tabData.buckets}
             onToggleFinished={onToggleFinished}
             onRemove={onRemove}
+            onAddToShopping={
+              activeTab === 'finished' ? onAddFinishedToShopping : undefined
+            }
+            addingIds={addingFinishedIds}
           />
         </div>
       ) : (
