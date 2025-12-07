@@ -41,7 +41,7 @@ export const RecipeCard = ({
   return (
     <article
       className={cn(
-        'group flex h-full min-h-[500px] flex-col rounded-xl border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md',
+        'group flex h-full min-h-[400px] flex-col rounded-xl border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md',
         className,
       )}
     >
@@ -92,7 +92,7 @@ export const RecipeCard = ({
           </Link>
           <Link href={`/recipes/${recipe.id}`}>
             <p className="line-clamp-2 text-sm text-muted-foreground">
-              {recipe.shortDescription || 'No description provided.'}
+              {recipe.shortDescription}
             </p>
           </Link>
         </div>

@@ -46,7 +46,7 @@ function PantryRecommendations({
   const showEmptyState = !loading && !hasRecommendations;
 
   return (
-    <div className="w-full max-w-4xl rounded-xl border bg-card p-4 shadow-sm">
+    <div className="w-full rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">Recipe ideas</h3>

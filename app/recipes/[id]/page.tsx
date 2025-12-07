@@ -114,7 +114,7 @@ const RecipeDetailPage = () => {
               <div>
                 <h1 className="text-3xl font-semibold">{recipe.name}</h1>
                 <p className="text-muted-foreground">
-                  {recipe.shortDescription || 'No description provided.'}
+                  {recipe.shortDescription}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
                   {recipe.tags?.map((tag, idx) => {
