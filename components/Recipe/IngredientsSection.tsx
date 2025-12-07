@@ -45,8 +45,7 @@ function IngredientsSection({
               onChange={(e) => onChange(index, 'name', e.target.value)}
             />
             <Input
-              type="number"
-              step="0.01"
+              step="1"
               placeholder="Quantity"
               value={ingredient.quantity}
               onChange={(e) => onChange(index, 'quantity', e.target.value)}

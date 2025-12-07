@@ -87,7 +87,7 @@ function PantryRecommendations({
                   key={`skeleton-${idx}`}
                   className="flex h-full min-w-[280px] max-w-[340px] shrink-0 flex-col space-y-4 rounded-xl border border-dashed border-muted-foreground/20 bg-muted/40 p-3"
                 >
-                  <div className="h-[500px] w-full animate-pulse rounded-lg bg-muted-foreground/20" />
+                  <div className="h-[300px] w-full animate-pulse rounded-lg bg-muted-foreground/20" />
                   <div className="flex-1 min-h-[180px] space-y-2 overflow-hidden text-xs text-muted-foreground">
                     <div className="h-4 w-20 animate-pulse rounded bg-muted-foreground/20" />
                     <div className="h-3 w-32 animate-pulse rounded bg-muted-foreground/20" />
