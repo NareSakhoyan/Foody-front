@@ -21,3 +21,11 @@ export const deletePantryItem = (callApi: CallApi, id: number, hard = false) =>
   callApi<void>(`/pantry/${id}${hard ? '?hard=true' : ''}`, {
     method: 'DELETE',
   });
+
+export const clearPantryItems = (
+  callApi: CallApi,
+  status: 'active' | 'finished',
+) =>
+  callApi<void>(`/pantry/items?status=${status}`, {
+    method: 'DELETE',
+  });

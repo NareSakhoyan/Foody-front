@@ -18,6 +18,7 @@ import {
   fetchPantryItems,
   upsertPantryItem,
   deletePantryItem,
+  clearPantryItems,
 } from '@/lib/api/pantry';
 import { fetchRecommendations } from '@/lib/api/recipes';
 import { Spinner } from '@/components/ui/spinner';
@@ -30,6 +31,7 @@ const PantryPage = () => {
   >([]);
   const [loading, setLoading] = useState(true);
   const [recsLoading, setRecsLoading] = useState(false);
+  const [clearing, setClearing] = useState<'active' | 'finished' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadPantry = useCallback(async () => {
@@ -141,6 +143,24 @@ const PantryPage = () => {
     }
   };
 
+  const clearItems = async (status: 'active' | 'finished') => {
+    setError(null);
+    setClearing(status);
+    try {
+      await clearPantryItems(callApi, status);
+      setItems((prev) =>
+        prev.filter((item) =>
+          status === 'active' ? item.isFinished : !item.isFinished,
+        ),
+      );
+    } catch (err) {
+      console.error('Failed to clear pantry items', err);
+      setError('Could not clear items.');
+    } finally {
+      setClearing((prev) => (prev === status ? null : prev));
+    }
+  };
+
   const totalTracked = useMemo(() => items.length, [items]);
 
   return (
@@ -192,6 +212,10 @@ const PantryPage = () => {
               items={items}
               onRemove={(id, hard) => void removeItem(id, hard)}
               onToggleFinished={(item) => void toggleFinished(item)}
+              onClearActive={() => void clearItems('active')}
+              onClearFinished={() => void clearItems('finished')}
+              clearingActive={clearing === 'active'}
+              clearingFinished={clearing === 'finished'}
             />
           )}
         </main>

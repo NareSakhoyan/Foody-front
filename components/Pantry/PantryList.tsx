@@ -1,15 +1,28 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import { PantryBuckets } from './PantryBuckets';
 import { getPantryCategory, type PantryItem } from './pantry-utils';
-import { CheckCircle, Trash2 } from 'lucide-react';
 
 type PantryListProps = {
   items: PantryItem[];
   onRemove: (id: number, hard?: boolean) => void;
   onToggleFinished: (item: PantryItem) => void;
+  onClearActive: () => void;
+  onClearFinished: () => void;
+  clearingActive?: boolean;
+  clearingFinished?: boolean;
 };
 
-function PantryList({ items, onRemove, onToggleFinished }: PantryListProps) {
+function PantryList({
+  items,
+  onRemove,
+  onToggleFinished,
+  onClearActive,
+  onClearFinished,
+  clearingActive = false,
+  clearingFinished = false,
+}: PantryListProps) {
   const active = items.filter((item) => !item.isFinished);
   const finished = items.filter((item) => item.isFinished);
 
@@ -34,106 +47,93 @@ function PantryList({ items, onRemove, onToggleFinished }: PantryListProps) {
 
   const activeBuckets = useMemo(() => buildBuckets(active), [active]);
   const finishedBuckets = useMemo(() => buildBuckets(finished), [finished]);
+  const [activeTab, setActiveTab] = useState<'active' | 'finished'>('active');
 
-  const renderBuckets = (
-    buckets: { category: string; items: PantryItem[] }[],
-  ) =>
-    buckets.map((bucket) => (
-      <div
-        key={bucket.category}
-        className="flex min-w-[240px] flex-col gap-2 rounded-lg border bg-muted/40 p-3"
-      >
-        <div className="text-sm font-semibold uppercase tracking-wide text-foreground">
-          {bucket.category === 'uncategorized'
-            ? 'Uncategorized'
-            : bucket.category}
-        </div>
-        <div
-          className="divide-y overflow-y-auto pr-1 [scrollbar-gutter:stable]"
-          style={{ maxHeight: '260px' }}
-        >
-          {bucket.items.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-wrap items-center justify-between gap-3 py-3"
-            >
-              <div className="space-y-1">
-                <div className="text-sm font-medium leading-tight">
-                  {item.name || 'Unnamed'}
-                </div>
-                {item.quantity ? (
-                  <div className="text-xs text-muted-foreground">
-                    {item.quantity}
-                  </div>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  onClick={() => onToggleFinished(item)}
-                  title={item.isFinished ? 'Unmark' : 'Mark finished'}
-                >
-                  <CheckCircle
-                    className={
-                      item.isFinished ? 'size-4 text-green-600' : 'size-4'
-                    }
-                  />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => onRemove(item.id, item.isFinished)}
-                  title={item.isFinished ? 'Delete' : 'Remove'}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    ));
+  const tabData =
+    activeTab === 'active'
+      ? {
+          label: 'In your pantry',
+          count: active.length,
+          buckets: activeBuckets,
+          empty: 'No active items. Add some staples or use the quick add form.',
+        }
+      : {
+          label: 'Finished',
+          count: finished.length,
+          buckets: finishedBuckets,
+          empty: 'Nothing finished yet. Mark items done to keep them here.',
+        };
+  const isClearing = activeTab === 'active' ? clearingActive : clearingFinished;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border bg-card p-4 shadow-sm">
-        <div className="mb-2 flex items-center justify-between">
+    <div className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
           <h3 className="text-lg font-semibold">
-            In your pantry
+            {tabData.label}
             <span className="ml-2 text-sm font-normal text-muted-foreground">
-              {active.length} item{active.length === 1 ? '' : 's'}
+              {tabData.count} item{tabData.count === 1 ? '' : 's'}
             </span>
           </h3>
+          <p className="text-sm text-muted-foreground">
+            Switch tabs to manage active and finished pantry items.
+          </p>
         </div>
-        {active.length ? (
-          <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {renderBuckets(activeBuckets)}
-          </div>
-        ) : (
-          <div className="py-3 text-sm text-muted-foreground">
-            No active items. Add some staples or use the quick add form.
-          </div>
-        )}
-      </div>
-
-      {finished.length ? (
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">
-              Finished
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                {finished.length} item{finished.length === 1 ? '' : 's'}
+        <div className="flex flex-wrap items-center gap-2">
+          <ButtonGroup className="overflow-hidden rounded-lg border">
+            <Button
+              type="button"
+              variant={activeTab === 'active' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('active')}
+              className="flex items-center gap-2"
+            >
+              In pantry
+              <span className="text-xs text-muted-foreground">
+                {active.length}
               </span>
-            </h3>
-          </div>
-          {finishedBuckets.length ? (
-            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {renderBuckets(finishedBuckets)}
-            </div>
-          ) : null}
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === 'finished' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('finished')}
+              className="flex items-center gap-2"
+            >
+              Finished
+              <span className="text-xs text-muted-foreground">
+                {finished.length}
+              </span>
+            </Button>
+          </ButtonGroup>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={tabData.count === 0 || isClearing}
+            onClick={
+              activeTab === 'active' ? onClearActive : onClearFinished
+            }
+          >
+            {isClearing
+              ? 'Clearing…'
+              : activeTab === 'active'
+                ? 'Clear pantry'
+                : 'Clear finished'}
+          </Button>
         </div>
-      ) : null}
+      </div>
+      {tabData.count ? (
+        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <PantryBuckets
+            buckets={tabData.buckets}
+            onToggleFinished={onToggleFinished}
+            onRemove={onRemove}
+          />
+        </div>
+      ) : (
+        <div className="py-3 text-sm text-muted-foreground">
+          {tabData.empty}
+        </div>
+      )}
     </div>
   );
 }
