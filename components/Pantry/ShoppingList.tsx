@@ -8,9 +8,10 @@ import { CheckCircle, Trash2 } from 'lucide-react';
 type ShoppingListProps = {
   items: ShoppingItem[];
   loading?: boolean;
-  onAdd: (input: CreateShoppingItemInput) => void;
-  onTogglePurchased: (item: ShoppingItem) => void;
-  onRemove: (id: number) => void;
+  onAdd?: (input: CreateShoppingItemInput) => void;
+  onTogglePurchased?: (item: ShoppingItem) => void;
+  onRemove?: (id: number) => void;
+  readOnly?: boolean;
 };
 
 function ShoppingList({
@@ -19,6 +20,7 @@ function ShoppingList({
   onAdd,
   onTogglePurchased,
   onRemove,
+  readOnly = false,
 }: ShoppingListProps) {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -29,7 +31,7 @@ function ShoppingList({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onAdd({
+    onAdd?.({
       name: name.trim(),
       quantity: quantity || null,
       notes: notes || null,
@@ -56,24 +58,26 @@ function ShoppingList({
           <div className="text-xs text-muted-foreground">{item.notes}</div>
         ) : null}
       </div>
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onTogglePurchased(item)}
-        >
-          Purchased
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => onRemove(item.id)}
-        >
-          <Trash2 className="size-4" />
-        </Button>
-      </div>
+      {readOnly ? null : (
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onTogglePurchased?.(item)}
+          >
+            Purchased
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => onRemove?.(item.id)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 
@@ -91,33 +95,35 @@ function ShoppingList({
         </div>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3"
-      >
-        <Input
-          placeholder="Item name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <Input
-          placeholder="Quantity (optional)"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-        />
-        <div className="flex flex-col gap-2 md:col-span-1 md:flex-row">
+      {readOnly ? null : (
+        <form
+          onSubmit={handleSubmit}
+          className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3"
+        >
           <Input
-            placeholder="Notes (optional)"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="md:flex-1"
+            placeholder="Item name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
           />
-          <Button type="submit" disabled={!name.trim()}>
-            Add to list
-          </Button>
-        </div>
-      </form>
+          <Input
+            placeholder="Quantity (optional)"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+          />
+          <div className="flex flex-col gap-2 md:col-span-1 md:flex-row">
+            <Input
+              placeholder="Notes (optional)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="md:flex-1"
+            />
+            <Button type="submit" disabled={!name.trim()}>
+              Add to list
+            </Button>
+          </div>
+        </form>
+      )}
 
       {loading ? (
         <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">

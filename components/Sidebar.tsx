@@ -4,6 +4,7 @@ import { SignedIn, SignOutButton } from '@clerk/nextjs';
 import {
   BookOpen,
   Compass,
+  CalendarRange,
   LogOut,
   Settings,
   ShoppingBasket,
@@ -34,6 +35,7 @@ const navItems = [
   { href: '/', label: 'Discover', icon: Compass },
   { href: '/my-recipes', label: 'My recipes', icon: BookOpen },
   { href: '/pantry', label: 'Pantry', icon: ShoppingBasket },
+  { href: '/meal-planner', label: 'Meal planner', icon: CalendarRange },
 ];
 
 const SidebarNav = ({ pathname }: { pathname: string | null }) => {
@@ -49,7 +51,7 @@ const SidebarNav = ({ pathname }: { pathname: string | null }) => {
             collapsed && 'sr-only',
           )}
         >
-          Menu
+          Foody
         </span>
         <SidebarTrigger className="hidden md:inline-flex" />
       </SidebarHeader>

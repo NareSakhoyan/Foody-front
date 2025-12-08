@@ -2,13 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import type React from 'react';
+import { useMemo } from 'react';
+import { Heart, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Recipe } from '@/lib/types/recipe';
-import { getTagKey, getTagLabel } from '@/lib/utils/tags';
-import { Heart, Pencil, Trash2 } from 'lucide-react';
-import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { getTagKey, getTagLabel } from '@/lib/utils/tags';
+import type { Recipe } from '@/lib/types/recipe';
 
 type RecipeCardProps = {
   recipe: Recipe;
@@ -20,6 +21,9 @@ type RecipeCardProps = {
   allowDelete?: boolean;
   onDelete?: (recipe: Recipe) => void;
   className?: string;
+  draggable?: boolean;
+  onDragStart?: (event: React.DragEvent<HTMLElement>, recipe: Recipe) => void;
+  onDragEnd?: (event: React.DragEvent<HTMLElement>, recipe: Recipe) => void;
 };
 
 export const RecipeCard = ({
@@ -32,6 +36,9 @@ export const RecipeCard = ({
   allowDelete,
   onDelete,
   className,
+  draggable,
+  onDragStart,
+  onDragEnd,
 }: RecipeCardProps) => {
   const fallbackInitial = useMemo(
     () => (recipe.name?.[0] || 'R').toUpperCase(),
@@ -44,6 +51,9 @@ export const RecipeCard = ({
         'group flex h-full min-h-[400px] flex-col rounded-xl border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md',
         className,
       )}
+      draggable={draggable}
+      onDragStart={(event) => onDragStart?.(event, recipe)}
+      onDragEnd={(event) => onDragEnd?.(event, recipe)}
     >
       <div className="relative mb-3 h-48 w-full overflow-hidden rounded-lg bg-muted md:h-52">
         <Link

@@ -1,5 +1,6 @@
 'use client';
 
+import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { RecipeFilters } from './RecipeFilters';
 import { RecipeCard } from './RecipeCard';
 import { useApi } from '@/hooks/useApi';
 import { getTagLabel } from '@/lib/utils/tags';
+import { cn } from '@/lib/utils';
 
 type RecipeListProps = {
   refreshKey?: number;
@@ -36,6 +38,18 @@ type RecipeListProps = {
   allowFavorite?: boolean;
   onDeleted?: () => void;
   currentUserId?: string | number;
+  draggableCards?: boolean;
+  onRecipeDragStart?: (
+    recipe: Recipe,
+    event: React.DragEvent<HTMLElement>,
+  ) => void;
+  onRecipeDragEnd?: (
+    recipe: Recipe,
+    event: React.DragEvent<HTMLElement>,
+  ) => void;
+  showPagination?: boolean;
+  horizontalScroll?: boolean;
+  gridClassName?: string;
 };
 
 const RecipeList = ({
@@ -48,6 +62,12 @@ const RecipeList = ({
   allowFavorite = false,
   onDeleted,
   currentUserId,
+  draggableCards = false,
+  onRecipeDragStart,
+  onRecipeDragEnd,
+  showPagination = true,
+  horizontalScroll = false,
+  gridClassName,
 }: RecipeListProps) => {
   const { callApi } = useApi();
   const router = useRouter();
@@ -307,10 +327,31 @@ const RecipeList = ({
           {error}
         </div>
       ) : loading ? (
-        <div className="flex flex-col gap-4">
-          <div className="h-24 w-full animate-pulse rounded-xl bg-gray-200" />
-          <div className="h-24 w-full animate-pulse rounded-xl bg-gray-200" />
-          <div className="h-24 w-full animate-pulse rounded-xl bg-gray-200" />
+        <div
+          className={cn(
+            horizontalScroll
+              ? 'grid grid-flow-col auto-cols-[minmax(260px,320px)] gap-4 overflow-x-auto pb-2 no-scrollbar sm:auto-cols-[minmax(280px,340px)]'
+              : 'grid gap-8 sm:grid-cols-2 lg:grid-cols-3',
+            gridClassName,
+          )}
+        >
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div
+              key={`skeleton-${idx}`}
+              className="flex h-full min-h-80 flex-col gap-3 rounded-xl border bg-card p-4 shadow-xs"
+            >
+              <div className="h-40 w-full animate-pulse rounded-lg bg-muted" />
+              <div className="space-y-2">
+                <div className="h-4 w-3/5 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              </div>
+              <div className="mt-auto flex flex-wrap gap-2">
+                <div className="h-6 w-16 animate-pulse rounded-full bg-muted" />
+                <div className="h-6 w-20 animate-pulse rounded-full bg-muted" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : !hasAny ? (
         <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
@@ -318,7 +359,14 @@ const RecipeList = ({
         </div>
       ) : (
         <>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={cn(
+              horizontalScroll
+                ? 'grid grid-flow-col auto-cols-[minmax(260px,320px)] gap-4 overflow-x-auto pb-2 no-scrollbar sm:auto-cols-[minmax(280px,340px)]'
+                : 'grid gap-8 pt-4 sm:grid-cols-2 lg:grid-cols-3',
+              gridClassName,
+            )}
+          >
             {recipes.map((recipe) => {
               const isOwner =
                 normalizedUserId !== null &&
@@ -344,11 +392,22 @@ const RecipeList = ({
                         }
                       : undefined
                   }
+                  draggable={draggableCards}
+                  onDragStart={
+                    draggableCards
+                      ? (event) => onRecipeDragStart?.(recipe, event)
+                      : undefined
+                  }
+                  onDragEnd={
+                    draggableCards
+                      ? (event) => onRecipeDragEnd?.(recipe, event)
+                      : undefined
+                  }
                 />
               );
             })}
           </div>
-          {totalPages > 1 ? (
+          {showPagination && totalPages > 1 ? (
             <div className="flex items-center justify-end gap-3 text-sm text-muted-foreground">
               <span>
                 Page {page} of {totalPages}
