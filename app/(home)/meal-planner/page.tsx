@@ -25,6 +25,9 @@ import type { Recipe } from '@/lib/types/recipe';
 import { ShoppingList } from '@/components/Pantry/ShoppingList';
 import type { ShoppingItem } from '@/components/Pantry/shopping-utils';
 import { toast } from 'sonner';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { SignInPrompt } from '@/components/Auth/SignInPrompt';
+import { Spinner } from '@/components/ui/spinner';
 
 const normalizeEntries = (list: MealPlanEntry[]): MealPlanEntry[] =>
   list.map((entry) => ({
@@ -57,6 +60,7 @@ const formatRange = (start: Date, end: Date) => {
 
 const MealPlannerPage = () => {
   const { callApi } = useApi();
+  const { user, loading: userLoading } = useCurrentUser();
   const visibleMeals = useMemo(
     () => new Set<MealKey>(MEAL_ROWS.map((m) => m.key)),
     [],
@@ -89,6 +93,15 @@ const MealPlannerPage = () => {
     () => formatRange(weekStart, weekEnd),
     [weekStart, weekEnd],
   );
+
+  useEffect(() => {
+    if (!user) {
+      setPlan(null);
+      setEntries([]);
+      setRecipesById({});
+      setShoppingItems([]);
+    }
+  }, [user]);
 
   const hydrateRecipes = useCallback(
     async (entriesToHydrate: MealPlanEntry[]) => {
@@ -128,7 +141,7 @@ const MealPlannerPage = () => {
   );
 
   const loadPlan = useCallback(async () => {
-    if (!startDate || !endDate) return;
+    if (!user || !startDate || !endDate) return;
     setLoadingPlan(true);
     setError(null);
     try {
@@ -144,14 +157,16 @@ const MealPlannerPage = () => {
     } finally {
       setLoadingPlan(false);
     }
-  }, [callApi, endDate, hydrateRecipes, startDate]);
+  }, [callApi, endDate, hydrateRecipes, startDate, user]);
 
   useEffect(() => {
+    if (!user) return;
     setError(null);
     void loadPlan();
-  }, [loadPlan]);
+  }, [loadPlan, user]);
 
   const ensurePlanId = useCallback(async (): Promise<string> => {
+    if (!user) throw new Error('Not signed in');
     if (plan?.id && plan.startDate === startDate && plan.endDate === endDate) {
       return plan.id;
     }
@@ -164,7 +179,7 @@ const MealPlannerPage = () => {
     setPlan(created);
     if (!created.id) throw new Error('Failed to create meal plan');
     return created.id;
-  }, [callApi, endDate, plan, startDate]);
+  }, [callApi, endDate, plan, startDate, user]);
 
   const handleClearWeek = async () => {
     try {
@@ -244,6 +259,7 @@ const MealPlannerPage = () => {
   };
 
   const handleGenerateShopping = useCallback(async () => {
+    if (!user) return;
     try {
       setGenerating(true);
       setShoppingLoading(true);
@@ -264,7 +280,7 @@ const MealPlannerPage = () => {
       setGenerating(false);
       setShoppingLoading(false);
     }
-  }, [callApi, ensurePlanId]);
+  }, [callApi, ensurePlanId, user]);
 
   const handlePrevWeek = () => {
     setWeekStart((prev) => addDays(prev, -7));
@@ -273,6 +289,28 @@ const MealPlannerPage = () => {
   const handleNextWeek = () => {
     setWeekStart((prev) => addDays(prev, 7));
   };
+
+  if (userLoading) {
+    return (
+      <main className="flex-1 min-w-0 space-y-6">
+        <div className="flex min-h-[40vh] items-center justify-center gap-2 text-muted-foreground">
+          <Spinner className="size-4" /> Loading meal planner…
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="flex-1 min-w-0 space-y-6">
+        <PlannerHeader />
+        <SignInPrompt
+          title="Please log in first to proceed."
+          message="Sign in to plan your meals and sync your shopping list."
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 min-w-0 space-y-6">

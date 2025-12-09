@@ -28,9 +28,12 @@ import {
 } from '@/lib/api/shopping-list';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { SignInPrompt } from '@/components/Auth/SignInPrompt';
 
 const PantryPage = () => {
   const { callApi } = useApi();
+  const { user, loading: userLoading } = useCurrentUser();
   const [items, setItems] = useState<PantryItem[]>([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +46,7 @@ const PantryPage = () => {
   const [shoppingError, setShoppingError] = useState<string | null>(null);
 
   const loadPantry = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     setError(null);
     try {
@@ -54,13 +58,14 @@ const PantryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [callApi]);
+  }, [callApi, user]);
 
   useEffect(() => {
     void loadPantry();
   }, [loadPantry]);
 
   const loadShopping = useCallback(async () => {
+    if (!user) return;
     setShoppingLoading(true);
     setShoppingError(null);
     try {
@@ -72,11 +77,20 @@ const PantryPage = () => {
     } finally {
       setShoppingLoading(false);
     }
-  }, [callApi]);
+  }, [callApi, user]);
 
   useEffect(() => {
     void loadShopping();
   }, [loadShopping]);
+
+  useEffect(() => {
+    if (!user) {
+      setItems([]);
+      setShoppingItems([]);
+      setLoading(false);
+      setShoppingLoading(false);
+    }
+  }, [user]);
 
   const addMany = async (list: CreatePantryInput[]) => {
     if (!list.length) return;
@@ -248,6 +262,35 @@ const PantryPage = () => {
   };
 
   const totalTracked = useMemo(() => items.length, [items]);
+
+  if (userLoading) {
+    return (
+      <main className="flex-1 min-w-0 space-y-6">
+        <div className="flex min-h-[40vh] items-center justify-center gap-2 text-muted-foreground">
+          <Spinner className="size-4" /> Loading pantry…
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="flex-1 min-w-0 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold">Pantry</h1>
+            <p className="text-muted-foreground">
+              Track what you have and keep your shopping list in sync.
+            </p>
+          </div>
+        </div>
+        <SignInPrompt
+          title="Please log in first to proceed."
+          message="Sign in to manage your pantry and shopping list."
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 min-w-0 space-y-6">
