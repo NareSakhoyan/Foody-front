@@ -280,13 +280,25 @@ const RecipeList = ({
     if (!allowFavorite) return;
     setFavoriteLoading(recipe.id);
     const nextState = !recipe.isFavorite;
+    let removedFromFavorites = false;
     try {
       await favoriteRecipe(callApi, recipe.id, nextState);
-      setRecipes((prev) =>
-        prev.map((r) =>
+      setRecipes((prev) => {
+        if (onlyFavorites && !nextState) {
+          const updated = prev.filter((r) => r.id !== recipe.id);
+          removedFromFavorites = prev.length !== updated.length;
+          if (updated.length === 0 && page > 1) {
+            setPage((p) => Math.max(1, p - 1));
+          }
+          return updated;
+        }
+        return prev.map((r) =>
           r.id === recipe.id ? { ...r, isFavorite: nextState } : r,
-        ),
-      );
+        );
+      });
+      if (onlyFavorites && !nextState && removedFromFavorites) {
+        setTotal((t) => Math.max(0, t - 1));
+      }
       toast.success(
         nextState ? 'Added to favorites.' : 'Removed from favorites.',
       );

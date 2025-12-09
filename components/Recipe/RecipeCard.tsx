@@ -115,7 +115,7 @@ export const RecipeCard = ({
               priority={false}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted/50 text-4xl font-semibold text-muted-foreground/70">
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-muted to-muted/50 text-4xl font-semibold text-muted-foreground/70">
               {fallbackInitial}
             </div>
           )}
