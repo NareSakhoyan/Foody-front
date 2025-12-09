@@ -153,7 +153,7 @@ const MealPlannerPage = () => {
     void loadPlan();
   }, [loadPlan]);
 
-  const ensurePlanId = useCallback(async () => {
+  const ensurePlanId = useCallback(async (): Promise<string> => {
     if (plan?.id && plan.startDate === startDate && plan.endDate === endDate) {
       return plan.id;
     }
@@ -164,6 +164,7 @@ const MealPlannerPage = () => {
       title: plan?.title ?? null,
     });
     setPlan(created);
+    if (!created.id) throw new Error('Failed to create meal plan');
     return created.id;
   }, [callApi, endDate, plan, startDate]);
 
