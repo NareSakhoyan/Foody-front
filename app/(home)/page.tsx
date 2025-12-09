@@ -1,11 +1,9 @@
 'use client';
-import Header from '@/components/Header';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import RecipeList from '@/components/Recipe/RecipeList';
 import RecipeForm from '@/components/Recipe/RecipeForm';
 import { Button } from '@/components/ui/button';
-import Sidebar from '@/components/Sidebar';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { useApi } from '@/hooks/useApi';
 import { createShoppingItem } from '@/lib/api/shopping-list';
@@ -60,19 +58,15 @@ const HomePage = () => {
     }
   };
 
-  if (loading)
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    );
-
   return (
-    <div>
-      <Header />
-      <div className="flex flex-col gap-6 px-4 py-6 md:flex-row md:items-start">
-        <Sidebar />
-        <main className="flex-1 min-w-0 space-y-6">
+    <main className="flex-1 min-w-0 space-y-6">
+      {loading ? (
+        <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
+          <Spinner className="size-6" />
+          <span className="ml-2">Loading…</span>
+        </div>
+      ) : (
+        <>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold">Recipes</h1>
@@ -114,9 +108,9 @@ const HomePage = () => {
             onAddMissingIngredient={handleAddMissingIngredient}
             shoppingNames={shoppingNames}
           />
-        </main>
-      </div>
-    </div>
+        </>
+      )}
+    </main>
   );
 };
 

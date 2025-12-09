@@ -1,7 +1,5 @@
 'use client';
 
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import RecipeForm from '@/components/Recipe/RecipeForm';
 import RecipeList from '@/components/Recipe/RecipeList';
 import { Button } from '@/components/ui/button';
@@ -17,14 +15,6 @@ const MyRecipesPage = () => {
   const [closeSignal, setCloseSignal] = useState(0);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    );
-  }
-
   const handleSuccess = () => {
     setRefreshKey((key) => key + 1);
     setShowForm(false);
@@ -37,11 +27,14 @@ const MyRecipesPage = () => {
   };
 
   return (
-    <div>
-      <Header />
-      <div className="flex flex-col gap-6 px-4 py-6 md:flex-row md:items-start">
-        <Sidebar />
-        <main className="flex-1 min-w-0 space-y-6">
+    <main className="flex-1 min-w-0 space-y-6">
+      {loading ? (
+        <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
+          <Spinner className="size-6" />
+          <span className="ml-2">Loading…</span>
+        </div>
+      ) : (
+        <>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold">My recipes</h1>
@@ -99,9 +92,9 @@ const MyRecipesPage = () => {
               }}
             />
           ) : null}
-        </main>
-      </div>
-    </div>
+        </>
+      )}
+    </main>
   );
 };
 

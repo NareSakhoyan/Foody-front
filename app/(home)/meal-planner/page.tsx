@@ -1,8 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import { PlannerControls } from '@/components/MealPlanner/PlannerControls';
 import { PlannerGrid } from '@/components/MealPlanner/PlannerGrid';
 import { PlannerHeader } from '@/components/MealPlanner/PlannerHeader';
@@ -277,56 +275,53 @@ const MealPlannerPage = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-y-auto">
-      <Header />
-      <div className="flex flex-col gap-6 px-4 py-6 md:flex-row md:items-start">
-        <Sidebar />
-        <main className="flex-1 min-w-0 space-y-6">
-          <PlannerHeader />
+    <main className="flex-1 min-w-0 space-y-6">
+      <PlannerHeader />
 
-          <PlannerControls
-            weekLabel="This week"
-            weekRange={`${weekRangeLabel} (auto-fills Sunday night reset)`}
-            onPrevWeek={handlePrevWeek}
-            onNextWeek={handleNextWeek}
-            onClearWeek={handleClearWeek}
-            actionsDisabled={saving || loadingPlan || generating}
+      <PlannerControls
+        weekLabel="This week"
+        weekRange={`${weekRangeLabel} (auto-fills Sunday night reset)`}
+        onPrevWeek={handlePrevWeek}
+        onNextWeek={handleNextWeek}
+        onClearWeek={handleClearWeek}
+        actionsDisabled={saving || loadingPlan || generating}
+      />
+
+      {error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,360px)]">
+        <PlannerGrid
+          days={visibleDays}
+          meals={activeMealRows}
+          entries={entries}
+          recipesById={recipesById}
+          loading={loadingPlan || saving}
+          onRemoveEntry={handleRemoveEntry}
+          onRecipeDrop={(recipeId, dayIso, mealKey) =>
+            void handleAddRecipe(recipeId, dayIso, mealKey)
+          }
+        />
+
+        <div className="max-h-[70vh] overflow-y-auto pr-1 no-scrollbar">
+          <ShoppingList
+            items={shoppingItems}
+            loading={shoppingLoading}
+            readOnly
           />
-
-          {error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,360px)]">
-            <PlannerGrid
-              days={visibleDays}
-              meals={activeMealRows}
-              entries={entries}
-              recipesById={recipesById}
-              loading={loadingPlan || saving}
-              onRemoveEntry={handleRemoveEntry}
-              onRecipeDrop={(recipeId, dayIso, mealKey) =>
-                void handleAddRecipe(recipeId, dayIso, mealKey)
-              }
-            />
-
-            <div className="max-h-[70vh] overflow-y-auto pr-1 no-scrollbar">
-              <ShoppingList
-                items={shoppingItems}
-                loading={shoppingLoading}
-                readOnly
-              />
-            </div>
-          </div>
-
-          <RecipeDock
-            onAddRecipe={(recipe) => void handleAddRecipe(recipe.id)}
-          />
-        </main>
+        </div>
       </div>
-    </div>
+
+      <RecipeDock
+        onAddRecipe={(recipe) => void handleAddRecipe(recipe.id)}
+        recipesById={recipesById}
+        setRecipesById={setRecipesById}
+        loading={loadingPlan}
+      />
+    </main>
   );
 };
 

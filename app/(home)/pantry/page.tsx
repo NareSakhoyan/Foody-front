@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import { PantryStaplesPreset } from '@/components/Pantry/PantryStaplesPreset';
 import { PantryBatchAdd } from '@/components/Pantry/PantryBatchAdd';
 import { PantryList } from '@/components/Pantry/PantryList';
@@ -252,72 +250,66 @@ const PantryPage = () => {
   const totalTracked = useMemo(() => items.length, [items]);
 
   return (
-    <div className="min-h-screen overflow-y-auto">
-      <Header />
-      <div className="flex flex-col gap-6 px-4 py-6 md:flex-row md:items-start">
-        <Sidebar />
-        <main className="flex-1 min-w-0 space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold">Pantry</h1>
-              <p className="text-muted-foreground">
-                Track what you have and keep your shopping list in sync.
-              </p>
-            </div>
-            <div className="rounded-lg border px-3 py-2 text-sm text-muted-foreground">
-              {totalTracked} item{totalTracked === 1 ? '' : 's'} tracked
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <PantryStaplesPreset
-              existingItems={items}
-              onAddMany={(inputs) => void addMany(inputs)}
-            />
-            <PantryBatchAdd onAddMany={(inputs) => void addMany(inputs)} />
-          </div>
-
-          {error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-
-          {loading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Spinner className="size-4" /> Loading pantry…
-            </div>
-          ) : (
-            <PantryList
-              items={items}
-              onRemove={(id, hard) => void removeItem(id, hard)}
-              onToggleFinished={(item) => void toggleFinished(item)}
-              onClearActive={() => void clearItems('active')}
-              onClearFinished={() => void clearItems('finished')}
-              clearingActive={clearing === 'active'}
-              clearingFinished={clearing === 'finished'}
-              onAddFinishedToShopping={(item) =>
-                void addFinishedItemToShopping(item)
-              }
-              addingFinishedIds={addingFinishedIds}
-            />
-          )}
-
-          {shoppingError ? (
-            <div className="rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {shoppingError}
-            </div>
-          ) : null}
-          <ShoppingList
-            items={shoppingItems}
-            loading={shoppingLoading}
-            onAdd={(input) => void addShoppingItem(input)}
-            onTogglePurchased={(item) => void togglePurchased(item)}
-            onRemove={(id) => void removeShoppingItem(id)}
-          />
-        </main>
+    <main className="flex-1 min-w-0 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Pantry</h1>
+          <p className="text-muted-foreground">
+            Track what you have and keep your shopping list in sync.
+          </p>
+        </div>
+        <div className="rounded-lg border px-3 py-2 text-sm text-muted-foreground">
+          {totalTracked} item{totalTracked === 1 ? '' : 's'} tracked
+        </div>
       </div>
-    </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <PantryStaplesPreset
+          existingItems={items}
+          onAddMany={(inputs) => void addMany(inputs)}
+        />
+        <PantryBatchAdd onAddMany={(inputs) => void addMany(inputs)} />
+      </div>
+
+      {error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Spinner className="size-4" /> Loading pantry…
+        </div>
+      ) : (
+        <PantryList
+          items={items}
+          onRemove={(id, hard) => void removeItem(id, hard)}
+          onToggleFinished={(item) => void toggleFinished(item)}
+          onClearActive={() => void clearItems('active')}
+          onClearFinished={() => void clearItems('finished')}
+          clearingActive={clearing === 'active'}
+          clearingFinished={clearing === 'finished'}
+          onAddFinishedToShopping={(item) =>
+            void addFinishedItemToShopping(item)
+          }
+          addingFinishedIds={addingFinishedIds}
+        />
+      )}
+
+      {shoppingError ? (
+        <div className="rounded border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {shoppingError}
+        </div>
+      ) : null}
+      <ShoppingList
+        items={shoppingItems}
+        loading={shoppingLoading}
+        onAdd={(input) => void addShoppingItem(input)}
+        onTogglePurchased={(item) => void togglePurchased(item)}
+        onRemove={(id) => void removeShoppingItem(id)}
+      />
+    </main>
   );
 };
 
