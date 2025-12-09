@@ -42,6 +42,12 @@ export type PantryRecommendation = {
   matchRatio?: number;
   matchedIngredients?: string[];
   missingIngredients?: string[];
+  author?: {
+    id: string | number;
+    name?: string | null;
+    imageUrl?: string | null;
+  };
+  tagIds?: Array<string | number>;
 } & Partial<Recipe>;
 
 type StapleCategory =

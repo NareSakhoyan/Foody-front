@@ -21,9 +21,9 @@ function PantryBatchAdd({ onAddMany }: PantryBatchAddProps) {
     <div className="rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Batch add</h3>
+          <h3 className="text-lg font-semibold">Add multiple items</h3>
           <p className="text-sm text-muted-foreground">
-            Paste multiple items. Format: name | quantity
+            Paste several pantry items. Format: name | quantity
           </p>
         </div>
         <Button

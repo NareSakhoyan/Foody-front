@@ -20,6 +20,10 @@ export type Recipe = {
   prepTimeMinutes?: number | null;
   cookTimeMinutes?: number | null;
   servings?: number | null;
+  matchCount?: number;
+  matchRatio?: number;
+  matchedIngredients?: string[];
+  missingIngredients?: string[];
   ingredients: {
     name: string;
     quantity: number;
@@ -31,6 +35,12 @@ export type Recipe = {
     note?: string;
   }[];
   tags: RecipeTag[];
+  tagIds?: Array<string | number>;
+  author?: {
+    id: string | number;
+    name?: string | null;
+    imageUrl?: string | null;
+  };
   isFavorite?: boolean;
   isPublic: boolean;
   status: 'draft' | 'published' | 'archived';

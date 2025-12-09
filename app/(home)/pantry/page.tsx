@@ -3,16 +3,13 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
-import { PantryQuickAdd } from '@/components/Pantry/PantryQuickAdd';
 import { PantryStaplesPreset } from '@/components/Pantry/PantryStaplesPreset';
 import { PantryBatchAdd } from '@/components/Pantry/PantryBatchAdd';
 import { PantryList } from '@/components/Pantry/PantryList';
-import { PantryRecommendations } from '@/components/Pantry/PantryRecommendations';
 import { ShoppingList } from '@/components/Pantry/ShoppingList';
 import {
   type CreatePantryInput,
   type PantryItem,
-  type PantryRecommendation,
 } from '@/components/Pantry/pantry-utils';
 import {
   type CreateShoppingItemInput,
@@ -31,19 +28,14 @@ import {
   updateShoppingItem,
   deleteShoppingItem,
 } from '@/lib/api/shopping-list';
-import { fetchRecommendations } from '@/lib/api/recipes';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 
 const PantryPage = () => {
   const { callApi } = useApi();
   const [items, setItems] = useState<PantryItem[]>([]);
-  const [recommendations, setRecommendations] = useState<
-    PantryRecommendation[]
-  >([]);
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recsLoading, setRecsLoading] = useState(false);
   const [shoppingLoading, setShoppingLoading] = useState(true);
   const [clearing, setClearing] = useState<'active' | 'finished' | null>(null);
   const [addingFinishedIds, setAddingFinishedIds] = useState<Set<number>>(
@@ -87,48 +79,6 @@ const PantryPage = () => {
   useEffect(() => {
     void loadShopping();
   }, [loadShopping]);
-
-  const refreshRecommendations = useCallback(async () => {
-    setRecsLoading(true);
-    try {
-      const recs = await fetchRecommendations(
-        callApi,
-        { status: 'published' },
-        8,
-      );
-      setRecommendations(recs);
-    } catch (err) {
-      console.error('Failed to load recommendations', err);
-    } finally {
-      setRecsLoading(false);
-    }
-  }, [callApi]);
-
-  useEffect(() => {
-    if (!items.length) {
-      setRecommendations([]);
-      return;
-    }
-    void refreshRecommendations();
-  }, [items, refreshRecommendations]);
-
-  const addItem = async (input: CreatePantryInput) => {
-    try {
-      const created = await upsertPantryItem(callApi, input);
-      setItems((prev) => {
-        const existingIndex = prev.findIndex((item) => item.id === created.id);
-        if (existingIndex >= 0) {
-          const next = [...prev];
-          next[existingIndex] = created;
-          return next;
-        }
-        return [...prev, created];
-      });
-    } catch (err) {
-      console.error('Failed to add pantry item', err);
-      setError('Could not save pantry item.');
-    }
-  };
 
   const addMany = async (list: CreatePantryInput[]) => {
     if (!list.length) return;
@@ -311,7 +261,7 @@ const PantryPage = () => {
             <div>
               <h1 className="text-2xl font-semibold">Pantry</h1>
               <p className="text-muted-foreground">
-                Track what you have and get recipe ideas using your pantry.
+                Track what you have and keep your shopping list in sync.
               </p>
             </div>
             <div className="rounded-lg border px-3 py-2 text-sm text-muted-foreground">
@@ -319,21 +269,13 @@ const PantryPage = () => {
             </div>
           </div>
 
-          <PantryRecommendations
-            recommendations={recommendations}
-            loading={recsLoading}
-            onRefresh={refreshRecommendations}
-          />
-
           <div className="grid gap-4 md:grid-cols-2">
-            <PantryQuickAdd onAdd={(input) => void addItem(input)} />
             <PantryStaplesPreset
               existingItems={items}
               onAddMany={(inputs) => void addMany(inputs)}
             />
+            <PantryBatchAdd onAddMany={(inputs) => void addMany(inputs)} />
           </div>
-
-          <PantryBatchAdd onAddMany={(inputs) => void addMany(inputs)} />
 
           {error ? (
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">

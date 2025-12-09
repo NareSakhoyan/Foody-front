@@ -59,7 +59,8 @@ function PantryList({
           label: 'In your pantry',
           count: active.length,
           buckets: activeBuckets,
-          empty: 'No active items. Add some staples or use the quick add form.',
+          empty:
+            'No active items. Add some staples or paste a list using Add multiple items.',
         }
       : {
           label: 'Finished',

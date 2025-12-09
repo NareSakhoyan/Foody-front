@@ -47,6 +47,8 @@ type RecipeListProps = {
     recipe: Recipe,
     event: React.DragEvent<HTMLElement>,
   ) => void;
+  onAddMissingIngredient?: (name: string) => void | Promise<void>;
+  shoppingNames?: Set<string>;
   showPagination?: boolean;
   horizontalScroll?: boolean;
   gridClassName?: string;
@@ -65,6 +67,8 @@ const RecipeList = ({
   draggableCards = false,
   onRecipeDragStart,
   onRecipeDragEnd,
+  onAddMissingIngredient,
+  shoppingNames,
   showPagination = true,
   horizontalScroll = false,
   gridClassName,
@@ -381,6 +385,8 @@ const RecipeList = ({
                   allowFavorite={allowFavorite}
                   favoriteLoading={favoriteLoading === recipe.id}
                   onToggleFavorite={handleFavoriteToggle}
+                  onAddMissingIngredient={onAddMissingIngredient}
+                  shoppingNames={shoppingNames}
                   allowEdit={canEditRecipe}
                   onEdit={canEditRecipe ? onEdit : undefined}
                   allowDelete={canDeleteRecipe}

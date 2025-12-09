@@ -5,25 +5,67 @@ import RecipeList from '@/components/Recipe/RecipeList';
 import RecipeForm from '@/components/Recipe/RecipeForm';
 import { Button } from '@/components/ui/button';
 import Sidebar from '@/components/Sidebar';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Spinner } from '@/components/ui/spinner';
+import { useApi } from '@/hooks/useApi';
+import { createShoppingItem } from '@/lib/api/shopping-list';
+import { toast } from 'sonner';
+import { fetchShoppingItems } from '@/lib/api/shopping-list';
 
 const HomePage = () => {
+  const { callApi } = useApi();
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [closeSignal, setCloseSignal] = useState(0);
+  const [shoppingNames, setShoppingNames] = useState<Set<string>>(
+    () => new Set(),
+  );
   const { user, loading } = useCurrentUser();
+
+  const handleCreated = () => {
+    setRefreshKey((key) => key + 1);
+    setShowForm(false);
+  };
+
+  useEffect(() => {
+    const loadShopping = async () => {
+      try {
+        const items = await fetchShoppingItems(callApi);
+        const names = new Set(
+          items
+            .map((item) => item.name?.toLowerCase().trim())
+            .filter((n): n is string => Boolean(n)),
+        );
+        setShoppingNames(names);
+      } catch (err) {
+        console.error('Failed to load shopping list for matches', err);
+      }
+    };
+    void loadShopping();
+  }, [callApi]);
+
+  const handleAddMissingIngredient = async (name: string) => {
+    if (!name?.trim()) return;
+    try {
+      await createShoppingItem(callApi, { name: name.trim() });
+      toast.success(`Added ${name} to shopping list`);
+      setShoppingNames((prev) => {
+        const next = new Set(prev);
+        next.add(name.toLowerCase().trim());
+        return next;
+      });
+    } catch (err) {
+      console.error('Failed to add shopping item', err);
+      toast.error('Could not add to shopping list.');
+    }
+  };
+
   if (loading)
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Spinner className="size-8" />
       </div>
     );
-
-  const handleCreated = () => {
-    setRefreshKey((key) => key + 1);
-    setShowForm(false);
-  };
 
   return (
     <div>
@@ -64,10 +106,13 @@ const HomePage = () => {
           ) : null}
           <RecipeList
             refreshKey={refreshKey}
+            endpoint="/recipes/recommendations"
             allowFavorite={!!user}
             allowEdit={false}
             allowDelete={false}
             currentUserId={user?.id}
+            onAddMissingIngredient={handleAddMissingIngredient}
+            shoppingNames={shoppingNames}
           />
         </main>
       </div>

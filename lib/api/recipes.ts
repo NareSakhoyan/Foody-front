@@ -106,8 +106,9 @@ export const favoriteRecipe = (
 export const fetchRecommendations = (
   callApi: CallApi,
   query?: RecipeListQuery,
-  limit = 5,
-) =>
-  callApi<PantryRecommendation[]>(
-    `/recipes/recommendations${buildQuery({ ...query, limit })}`,
-  );
+): Promise<{
+  items: PantryRecommendation[];
+  page: number;
+  pageSize: number;
+  total: number;
+}> => callApi(`/recipes/recommendations${buildQuery(query)}`);

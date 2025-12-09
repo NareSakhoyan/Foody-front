@@ -10,12 +10,16 @@ type PantryRecommendationsProps = {
   recommendations: PantryRecommendation[];
   loading?: boolean;
   onRefresh?: () => void;
+  title?: string;
+  description?: string;
 };
 
 function PantryRecommendations({
   recommendations,
   loading,
   onRefresh,
+  title = 'Recipe ideas',
+  description = 'Based on your pantry. Higher match = more ingredients you already own.',
 }: PantryRecommendationsProps) {
   const normalizedRecs = recommendations
     .map((rec) => {
@@ -49,11 +53,8 @@ function PantryRecommendations({
     <div className="w-full rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold">Recipe ideas</h3>
-          <p className="text-sm text-muted-foreground">
-            Based on your pantry. Higher match = more ingredients you already
-            own.
-          </p>
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         {onRefresh ? (
           <Button
@@ -110,7 +111,7 @@ function PantryRecommendations({
                       recipe={item.recipe}
                       className="h-[500px] min-h-[500px]"
                     />
-                    <div className="flex-1 min-h-[180px] max-h-[200px] space-y-2 overflow-hidden text-xs text-muted-foreground">
+                    <div className="flex-1 min-h-[200px] max-h-[260px] space-y-2 overflow-y-auto pr-1 text-xs text-muted-foreground no-scrollbar">
                       <div className="text-sm font-semibold text-primary">
                         Match{' '}
                         {Number.isFinite(item.matchRatio)

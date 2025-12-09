@@ -135,8 +135,10 @@ function ShoppingList({
             <span>To buy</span>
           </div>
           {active.length ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {active.map((item) => renderItem(item))}
+            <div className="max-h-[60vh] overflow-y-auto pr-1 [scrollbar-gutter:stable] no-scrollbar">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {active.map((item) => renderItem(item))}
+              </div>
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">

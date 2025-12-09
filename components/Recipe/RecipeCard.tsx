@@ -3,12 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type React from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Heart, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getTagKey, getTagLabel } from '@/lib/utils/tags';
+import { CheckCircle2 } from 'lucide-react';
 import type { Recipe } from '@/lib/types/recipe';
 
 type RecipeCardProps = {
@@ -16,6 +17,8 @@ type RecipeCardProps = {
   allowFavorite?: boolean;
   favoriteLoading?: boolean;
   onToggleFavorite?: (recipe: Recipe) => void;
+  onAddMissingIngredient?: (name: string) => void | Promise<void>;
+  shoppingNames?: Set<string>;
   allowEdit?: boolean;
   onEdit?: (recipe: Recipe) => void;
   allowDelete?: boolean;
@@ -31,6 +34,8 @@ export const RecipeCard = ({
   allowFavorite,
   favoriteLoading,
   onToggleFavorite,
+  onAddMissingIngredient,
+  shoppingNames,
   allowEdit,
   onEdit,
   allowDelete,
@@ -44,6 +49,46 @@ export const RecipeCard = ({
     () => (recipe.name?.[0] || 'R').toUpperCase(),
     [recipe.name],
   );
+  const matchPercent =
+    recipe.matchRatio !== undefined && recipe.matchRatio !== null
+      ? Math.round(recipe.matchRatio * 100)
+      : null;
+  const matchedIngredients =
+    recipe.matchedIngredients?.filter(Boolean) ?? ([] as string[]);
+  const missingIngredients =
+    recipe.missingIngredients?.filter(Boolean) ?? ([] as string[]);
+  const [addedMissing, setAddedMissing] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const ingredientSummary = (recipe.ingredients ?? [])
+    .map((item) => item.name)
+    .filter(Boolean)
+    .join(', ');
+  const totalForMatch = matchedIngredients.length + missingIngredients.length;
+  const computedMatchRatio =
+    totalForMatch > 0 ? matchedIngredients.length / totalForMatch : null;
+  const displayMatchPercent =
+    computedMatchRatio !== null
+      ? Math.round(computedMatchRatio * 100)
+      : matchPercent;
+  const matchBadgeClass = (() => {
+    const pct = displayMatchPercent ?? 0;
+    if (pct >= 90)
+      return 'border-emerald-500/60 text-emerald-800 dark:text-emerald-200';
+    if (pct >= 75) return 'border-lime-500/60 text-lime-800 dark:text-lime-200';
+    if (pct >= 50)
+      return 'border-amber-500/70 text-amber-800 dark:text-amber-200';
+    if (pct >= 25)
+      return 'border-orange-500/70 text-orange-800 dark:text-orange-200';
+    return 'border-red-500/70 text-red-800 dark:text-red-200';
+  })();
+  const [addingMissing, setAddingMissing] = useState<string | null>(null);
+  const hasMatchData =
+    displayMatchPercent !== null ||
+    matchedIngredients.length > 0 ||
+    missingIngredients.length > 0;
+  const matchSummary =
+    displayMatchPercent !== null ? `Match ${displayMatchPercent}%` : null;
 
   return (
     <article
@@ -156,6 +201,15 @@ export const RecipeCard = ({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        {hasMatchData ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {matchSummary ? (
+              <Badge variant="outline" className={matchBadgeClass}>
+                {matchSummary}
+              </Badge>
+            ) : null}
+          </div>
+        ) : null}
         {recipe.prepTimeMinutes ? (
           <Badge variant="outline">Prep: {recipe.prepTimeMinutes} min</Badge>
         ) : null}
@@ -178,16 +232,115 @@ export const RecipeCard = ({
 
       {recipe.ingredients?.length ? (
         <div className="mt-auto pt-3 space-y-1 text-sm">
-          <p className="font-medium text-foreground">Key ingredients</p>
-          <p className="line-clamp-2 text-muted-foreground">
-            {recipe.ingredients
-              .slice(0, 3)
-              .map(
-                (item) => `${item.quantity} ${item.measureUnit} ${item.name}`,
-              )
-              .join(', ')}
-            {recipe.ingredients.length > 3 ? '…' : ''}
-          </p>
+          <p className="font-medium text-foreground">Ingredients</p>
+          {ingredientSummary &&
+          (displayMatchPercent === null || displayMatchPercent === 100) ? (
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {ingredientSummary}
+            </p>
+          ) : null}
+          {hasMatchData ? (
+            <div className="space-y-2">
+              {matchedIngredients.length && missingIngredients.length ? (
+                <div className="space-y-1 text-xs text-emerald-700 dark:text-emerald-300">
+                  <div className="font-semibold text-emerald-800 dark:text-emerald-200">
+                    Matched ({matchedIngredients.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {matchedIngredients.map((ing, idx) => (
+                      <Badge
+                        key={`${ing}-${idx}`}
+                        variant="outline"
+                        className="border-emerald-400/60 text-emerald-800 dark:text-emerald-100"
+                      >
+                        {ing}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {missingIngredients.length ? (
+                <div className="space-y-1 text-xs text-amber-700 dark:text-amber-300">
+                  <div className="font-semibold text-amber-800 dark:text-amber-200">
+                    Missing ({missingIngredients.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {missingIngredients.map((ing, idx) => {
+                      const normalized = ing.toLowerCase().trim();
+                      const isAlreadyInShopping =
+                        (shoppingNames?.has(normalized) ?? false) ||
+                        addedMissing.has(normalized);
+                      if (!onAddMissingIngredient) {
+                        return (
+                          <Badge
+                            key={`${ing}-${idx}`}
+                            variant="outline"
+                            className="border-amber-400/60 text-amber-800 dark:text-amber-100"
+                          >
+                            {ing}
+                          </Badge>
+                        );
+                      }
+                      return (
+                        <button
+                          key={`${ing}-${idx}`}
+                          type="button"
+                          className={cn(
+                            'cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-medium transition flex items-center gap-1.5',
+                            isAlreadyInShopping
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100'
+                              : 'bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:hover:bg-amber-900/60',
+                          )}
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (isAlreadyInShopping) return;
+                            setAddingMissing(ing);
+                            try {
+                              await onAddMissingIngredient(ing);
+                              setAddedMissing((prev) => {
+                                const next = new Set(prev);
+                                next.add(normalized);
+                                return next;
+                              });
+                            } catch (err) {
+                              console.error('Failed to add missing item', err);
+                            } finally {
+                              setAddingMissing((curr) =>
+                                curr === ing ? null : curr,
+                              );
+                            }
+                          }}
+                          aria-label={
+                            isAlreadyInShopping
+                              ? `${ing} already in shopping list`
+                              : `Add ${ing} to shopping list`
+                          }
+                          title={
+                            isAlreadyInShopping
+                              ? 'Already in shopping list'
+                              : 'Add to shopping list'
+                          }
+                          disabled={
+                            addingMissing !== null || isAlreadyInShopping
+                          }
+                        >
+                          {isAlreadyInShopping ? (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              {ing}
+                            </>
+                          ) : (
+                            `+ ${ing}`
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </article>
