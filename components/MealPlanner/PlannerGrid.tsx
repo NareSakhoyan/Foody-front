@@ -1,8 +1,7 @@
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { MealKey, MealPlanEntry, MealRow, WeekDay } from './types';
 import type { Recipe } from '@/lib/types/recipe';
+import { PlannerEntry } from './PlannerEntry';
 
 type PlannerGridProps = {
   days: WeekDay[];
@@ -23,31 +22,6 @@ const PlannerGrid = ({
   onRemoveEntry,
   onRecipeDrop,
 }: PlannerGridProps) => {
-  const renderEntry = (entry: MealPlanEntry) => {
-    const recipe = recipesById[entry.recipeId];
-    return (
-      <div className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2 shadow-xs">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">{recipe?.name ?? 'Recipe'}</div>
-          <p className="text-xs text-muted-foreground">
-            {recipe?.shortDescription}
-          </p>
-        </div>
-        {onRemoveEntry ? (
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={() => onRemoveEntry(entry.id)}
-            disabled={loading}
-            aria-label="Remove entry"
-          >
-            <X className="size-4" />
-          </Button>
-        ) : null}
-      </div>
-    );
-  };
-
   return (
     <section className="rounded-xl border bg-card shadow-sm">
       <div className="overflow-x-auto">
@@ -116,7 +90,14 @@ const PlannerGrid = ({
                     return (
                       <div className="h-full">
                         {cellEntries.map((entry) => (
-                          <div key={entry.id}>{renderEntry(entry)}</div>
+                          <div key={entry.id}>
+                            <PlannerEntry
+                              entry={entry}
+                              recipe={recipesById[entry.recipeId]}
+                              loading={loading}
+                              onRemoveEntry={onRemoveEntry}
+                            />
+                          </div>
                         ))}
                       </div>
                     );

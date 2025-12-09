@@ -253,7 +253,12 @@ const MealPlannerPage = () => {
       const result = await addMissingIngredientsToShopping(callApi, planId);
       const items = (result.items as ShoppingItem[]) ?? [];
       setShoppingItems(items);
-      toast.success(`Added ${result.addedCount ?? 0} items to shopping list.`);
+      const addedCount = result.addedCount ?? 0;
+      if (addedCount > 0) {
+        toast.success(`Added ${addedCount} items to shopping list.`);
+      } else {
+        toast.success('Shopping list is already up to date.');
+      }
     } catch (err) {
       console.error('Failed to generate shopping list', err);
       toast.error('Could not generate shopping list.');
@@ -284,7 +289,6 @@ const MealPlannerPage = () => {
             weekRange={`${weekRangeLabel} (auto-fills Sunday night reset)`}
             onPrevWeek={handlePrevWeek}
             onNextWeek={handleNextWeek}
-            onGenerateList={handleGenerateShopping}
             onClearWeek={handleClearWeek}
             actionsDisabled={saving || loadingPlan || generating}
           />
@@ -308,33 +312,12 @@ const MealPlannerPage = () => {
               }
             />
 
-            <div className="rounded-xl border bg-card p-4 shadow-sm lg:max-w-sm lg:justify-self-end">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <h3 className="text-lg font-semibold">
-                    Weekly shopping list
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Based on this week&apos;s plan. Refresh to pull missing
-                    ingredients.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="text-sm text-primary underline-offset-4 hover:underline"
-                  onClick={() => void handleGenerateShopping()}
-                  disabled={generating || saving || loadingPlan}
-                >
-                  {generating ? 'Refreshing…' : 'Refresh'}
-                </button>
-              </div>
-              <div className="mt-3 max-h-[70vh] overflow-y-auto pr-1 no-scrollbar">
-                <ShoppingList
-                  items={shoppingItems}
-                  loading={shoppingLoading}
-                  readOnly
-                />
-              </div>
+            <div className="max-h-[70vh] overflow-y-auto pr-1 no-scrollbar">
+              <ShoppingList
+                items={shoppingItems}
+                loading={shoppingLoading}
+                readOnly
+              />
             </div>
           </div>
 

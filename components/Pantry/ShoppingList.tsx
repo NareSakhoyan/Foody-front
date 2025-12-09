@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import type { CreateShoppingItemInput, ShoppingItem } from './shopping-utils';
-import { CheckCircle, Trash2 } from 'lucide-react';
+import { ShoppingListItem } from './ShoppingListItem';
 
 type ShoppingListProps = {
   items: ShoppingItem[];
@@ -41,46 +41,6 @@ function ShoppingList({
     setNotes('');
   };
 
-  const renderItem = (item: ShoppingItem) => (
-    <div
-      key={item.id}
-      className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-muted/40 p-3"
-    >
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 text-sm font-medium leading-tight">
-          <CheckCircle className="size-4 text-muted-foreground" />
-          <span>{item.name}</span>
-        </div>
-        {item.quantity ? (
-          <div className="text-xs text-muted-foreground">{item.quantity}</div>
-        ) : null}
-        {item.notes ? (
-          <div className="text-xs text-muted-foreground">{item.notes}</div>
-        ) : null}
-      </div>
-      {readOnly ? null : (
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onTogglePurchased?.(item)}
-          >
-            Purchased
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => onRemove?.(item.id)}
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="rounded-xl border bg-card p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -89,9 +49,6 @@ function ShoppingList({
           <p className="text-sm text-muted-foreground">
             Track what to buy and mark items as purchased.
           </p>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {active.length} open item{active.length === 1 ? '' : 's'}
         </div>
       </div>
 
@@ -131,13 +88,18 @@ function ShoppingList({
         </div>
       ) : (
         <div className="mt-4 space-y-2">
-          <div className="flex items-center justify-between text-sm font-semibold">
-            <span>To buy</span>
-          </div>
           {active.length ? (
-            <div className="max-h-[60vh] overflow-y-auto pr-1 [scrollbar-gutter:stable] no-scrollbar">
+            <div className="min-h-[30vh] overflow-y-auto pr-1 [scrollbar-gutter:stable] no-scrollbar">
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {active.map((item) => renderItem(item))}
+                {active.map((item, index) => (
+                  <ShoppingListItem
+                    key={`${item.id}-${index}`}
+                    item={item}
+                    readOnly={readOnly}
+                    onTogglePurchased={onTogglePurchased}
+                    onRemove={onRemove}
+                  />
+                ))}
               </div>
             </div>
           ) : (

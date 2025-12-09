@@ -1,10 +1,4 @@
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  UtensilsCrossed,
-} from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type PlannerControlsProps = {
@@ -20,7 +14,6 @@ type PlannerControlsProps = {
 const PlannerControls = ({
   onPrevWeek,
   onNextWeek,
-  onGenerateList,
   onClearWeek,
   weekLabel,
   weekRange,
@@ -56,15 +49,6 @@ const PlannerControls = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={onGenerateList}
-            disabled={actionsDisabled}
-          >
-            <Sparkles className="size-4" />
-            Generate shopping list
-          </Button>
           <Button
             size="sm"
             variant="destructive"
