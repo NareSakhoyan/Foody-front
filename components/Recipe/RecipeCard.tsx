@@ -19,6 +19,7 @@ type RecipeCardProps = {
   onToggleFavorite?: (recipe: Recipe) => void;
   onAddMissingIngredient?: (name: string) => void | Promise<void>;
   shoppingNames?: Set<string>;
+  showMatchData?: boolean;
   allowEdit?: boolean;
   onEdit?: (recipe: Recipe) => void;
   allowDelete?: boolean;
@@ -36,6 +37,7 @@ export const RecipeCard = ({
   onToggleFavorite,
   onAddMissingIngredient,
   shoppingNames,
+  showMatchData = true,
   allowEdit,
   onEdit,
   allowDelete,
@@ -67,10 +69,11 @@ export const RecipeCard = ({
   const totalForMatch = matchedIngredients.length + missingIngredients.length;
   const computedMatchRatio =
     totalForMatch > 0 ? matchedIngredients.length / totalForMatch : null;
-  const displayMatchPercent =
-    computedMatchRatio !== null
+  const displayMatchPercent = showMatchData
+    ? computedMatchRatio !== null
       ? Math.round(computedMatchRatio * 100)
-      : matchPercent;
+      : matchPercent
+    : null;
   const matchBadgeClass = (() => {
     const pct = displayMatchPercent ?? 0;
     if (pct >= 90)
@@ -84,9 +87,10 @@ export const RecipeCard = ({
   })();
   const [addingMissing, setAddingMissing] = useState<string | null>(null);
   const hasMatchData =
-    displayMatchPercent !== null ||
-    matchedIngredients.length > 0 ||
-    missingIngredients.length > 0;
+    showMatchData &&
+    (displayMatchPercent !== null ||
+      matchedIngredients.length > 0 ||
+      missingIngredients.length > 0);
   const matchSummary =
     displayMatchPercent !== null ? `Match ${displayMatchPercent}%` : null;
 

@@ -1,13 +1,24 @@
+'use client';
+
 import type React from 'react';
 import { useCallback } from 'react';
 import RecipeList from '@/components/Recipe/RecipeList';
 import type { Recipe } from '@/lib/types/recipe';
+import { useRecipeFilters } from '@/components/Recipe/useRecipeFilters';
+import { RecipeFilterBar } from '@/components/Recipe/RecipeFilterBar';
 
 type RecipeDockProps = {
   onAddRecipe?: (recipe: Recipe) => void;
+  recipesById?: Record<string, Recipe | undefined>;
+  setRecipesById?: React.Dispatch<
+    React.SetStateAction<Record<string, Recipe | undefined>>
+  >;
+  loading?: boolean;
 };
 
 const RecipeDock = ({ onAddRecipe }: RecipeDockProps) => {
+  const filters = useRecipeFilters({ syncWithUrl: false });
+
   const handleDragStart = useCallback(
     (recipe: Recipe, event: React.DragEvent<HTMLElement>) => {
       try {
@@ -29,22 +40,41 @@ const RecipeDock = ({ onAddRecipe }: RecipeDockProps) => {
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">Recipe dock</h3>
           <p className="text-sm text-muted-foreground">
-            Keep a backlog of recipes to drag into the plan. Filter, tab between
-            meals, and search.
+            Backlog of recipes to drag into the plan. Filter, tab between meals,
+            and search.
           </p>
         </div>
       </div>
 
-      <div className="pb-2">
+      <div className="space-y-4 pb-2">
+        <RecipeFilterBar
+          search={filters.search}
+          onSearchChange={filters.setSearch}
+          allowFavorite={false}
+          onlyFavorites={filters.onlyFavorites}
+          onToggleFavorites={() => filters.setOnlyFavorites((prev) => !prev)}
+          selectedTags={filters.selectedTags}
+          quickTags={filters.quickTags}
+          onToggleTag={filters.toggleTag}
+          availableTagChoices={filters.availableTagChoices}
+          tagChoice={filters.tagChoice}
+          onTagChoiceChange={filters.setTagChoice}
+          showTagPicker={filters.showTagPicker}
+          onToggleTagPicker={filters.setShowTagPicker}
+          onAddTag={filters.addTagFilter}
+        />
+
         <RecipeList
           allowEdit={false}
           allowDelete={false}
           draggableCards
           horizontalScroll
-          gridClassName="grid-cols-none! grid-flow-col auto-cols-[minmax(260px,320px)] gap-4 overflow-x-auto pb-2 no-scrollbar sm:auto-cols-[minmax(280px,340px)]"
           onRecipeDragStart={handleDragStart}
           onRecipeDragEnd={() => {}}
           showPagination={false}
+          filters={filters}
+          favoriteFirst
+          showFavoritesMatchData={false}
         />
       </div>
     </section>

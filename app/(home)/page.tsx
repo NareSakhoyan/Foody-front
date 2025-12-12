@@ -9,6 +9,8 @@ import { useApi } from '@/hooks/useApi';
 import { createShoppingItem } from '@/lib/api/shopping-list';
 import { toast } from 'sonner';
 import { fetchShoppingItems } from '@/lib/api/shopping-list';
+import { RecipeFilterBar } from '@/components/Recipe/RecipeFilterBar';
+import { useRecipeFilters } from '@/components/Recipe/useRecipeFilters';
 
 const HomePage = () => {
   const { callApi } = useApi();
@@ -19,6 +21,7 @@ const HomePage = () => {
     () => new Set(),
   );
   const { user, loading } = useCurrentUser();
+  const filters = useRecipeFilters();
 
   const handleCreated = () => {
     setRefreshKey((key) => key + 1);
@@ -98,16 +101,37 @@ const HomePage = () => {
               closeSignal={closeSignal}
             />
           ) : null}
-          <RecipeList
-            refreshKey={refreshKey}
-            endpoint="/recipes/recommendations"
-            allowFavorite={!!user}
-            allowEdit={false}
-            allowDelete={false}
-            currentUserId={user?.id}
-            onAddMissingIngredient={handleAddMissingIngredient}
-            shoppingNames={shoppingNames}
-          />
+          <div className="space-y-4">
+            <RecipeFilterBar
+              search={filters.search}
+              onSearchChange={filters.setSearch}
+              allowFavorite={!!user}
+              onlyFavorites={filters.onlyFavorites}
+              onToggleFavorites={() =>
+                filters.setOnlyFavorites((prev) => !prev)
+              }
+              selectedTags={filters.selectedTags}
+              quickTags={filters.quickTags}
+              onToggleTag={filters.toggleTag}
+              availableTagChoices={filters.availableTagChoices}
+              tagChoice={filters.tagChoice}
+              onTagChoiceChange={filters.setTagChoice}
+              showTagPicker={filters.showTagPicker}
+              onToggleTagPicker={filters.setShowTagPicker}
+              onAddTag={filters.addTagFilter}
+            />
+            <RecipeList
+              refreshKey={refreshKey}
+              endpoint="/recipes/recommendations"
+              allowFavorite={!!user}
+              allowEdit={false}
+              allowDelete={false}
+              currentUserId={user?.id}
+              onAddMissingIngredient={handleAddMissingIngredient}
+              shoppingNames={shoppingNames}
+              filters={filters}
+            />
+          </div>
         </>
       )}
     </main>

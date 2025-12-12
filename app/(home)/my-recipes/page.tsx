@@ -8,6 +8,8 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { Recipe } from '@/lib/types/recipe';
 import { useState } from 'react';
 import { SignInPrompt } from '@/components/Auth/SignInPrompt';
+import { useRecipeFilters } from '@/components/Recipe/useRecipeFilters';
+import { RecipeFilterBar } from '@/components/Recipe/RecipeFilterBar';
 
 const MyRecipesPage = () => {
   const { user, loading } = useCurrentUser();
@@ -15,6 +17,7 @@ const MyRecipesPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [closeSignal, setCloseSignal] = useState(0);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const filters = useRecipeFilters();
 
   const handleSuccess = () => {
     setRefreshKey((key) => key + 1);
@@ -92,20 +95,40 @@ const MyRecipesPage = () => {
         />
       ) : null}
 
-      <RecipeList
-        refreshKey={refreshKey}
-        endpoint="/recipes/mine"
-        includeDrafts
-        allowEdit
-        allowFavorite
-        allowDelete
-        currentUserId={user?.id}
-        onDeleted={handleSuccess}
-        onEdit={(recipe) => {
-          setSelectedRecipe(recipe);
-          setShowForm(true);
-        }}
-      />
+      <div className="space-y-4">
+        <RecipeFilterBar
+          search={filters.search}
+          onSearchChange={filters.setSearch}
+          allowFavorite
+          onlyFavorites={filters.onlyFavorites}
+          onToggleFavorites={() => filters.setOnlyFavorites((prev) => !prev)}
+          selectedTags={filters.selectedTags}
+          quickTags={filters.quickTags}
+          onToggleTag={filters.toggleTag}
+          availableTagChoices={filters.availableTagChoices}
+          tagChoice={filters.tagChoice}
+          onTagChoiceChange={filters.setTagChoice}
+          showTagPicker={filters.showTagPicker}
+          onToggleTagPicker={filters.setShowTagPicker}
+          onAddTag={filters.addTagFilter}
+        />
+
+        <RecipeList
+          refreshKey={refreshKey}
+          endpoint="/recipes/mine"
+          includeDrafts
+          allowEdit
+          allowFavorite
+          allowDelete
+          currentUserId={user?.id}
+          onDeleted={handleSuccess}
+          onEdit={(recipe) => {
+            setSelectedRecipe(recipe);
+            setShowForm(true);
+          }}
+          filters={filters}
+        />
+      </div>
     </main>
   );
 };
