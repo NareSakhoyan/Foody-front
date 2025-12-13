@@ -18,6 +18,13 @@ export type RecipeListQuery = {
   tag?: string;
   status?: string;
   authorId?: string;
+  maxPrepTime?: number;
+  maxCookTime?: number;
+  maxTotalTime?: number;
+  includeIngredients?: string;
+  excludeIngredients?: string;
+  maxMissingIngredients?: number;
+  minMatchPercent?: number;
 };
 
 export type RecipePayload = {

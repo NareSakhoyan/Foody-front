@@ -119,6 +119,24 @@ const HomePage = () => {
               showTagPicker={filters.showTagPicker}
               onToggleTagPicker={filters.setShowTagPicker}
               onAddTag={filters.addTagFilter}
+              maxPrepTime={filters.maxPrepTime}
+              onMaxPrepTimeChange={filters.setMaxPrepTime}
+              maxCookTime={filters.maxCookTime}
+              onMaxCookTimeChange={filters.setMaxCookTime}
+              maxTotalTime={filters.maxTotalTime}
+              onMaxTotalTimeChange={filters.setMaxTotalTime}
+              includeIngredients={filters.includeIngredients}
+              excludeIngredients={filters.excludeIngredients}
+              onIncludeIngredientAdd={filters.addIncludeIngredient}
+              onExcludeIngredientAdd={filters.addExcludeIngredient}
+              onIncludeIngredientRemove={filters.removeIncludeIngredient}
+              onExcludeIngredientRemove={filters.removeExcludeIngredient}
+              ingredientSuggestions={filters.ingredientSuggestions}
+              maxMissingIngredients={filters.maxMissingIngredients}
+              onMaxMissingIngredientsChange={filters.setMaxMissingIngredients}
+              minMatchPercent={filters.minMatchPercent}
+              onMinMatchPercentChange={filters.setMinMatchPercent}
+              onApply={filters.applyFilters}
             />
             <RecipeList
               refreshKey={refreshKey}

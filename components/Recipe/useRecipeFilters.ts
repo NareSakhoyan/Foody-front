@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { fetchRecipeTags } from '@/lib/api/recipes';
+import { fetchRecipeTags, fetchRecipes } from '@/lib/api/recipes';
 import { getTagLabel } from '@/lib/utils/tags';
 import { useApi } from '@/hooks/useApi';
 import { toast } from 'sonner';
@@ -25,6 +25,38 @@ export type RecipeFiltersState = {
   tagParam?: string;
   selectedTagsKey: string;
   syncWithUrl: boolean;
+  maxPrepTime?: number;
+  setMaxPrepTime: React.Dispatch<React.SetStateAction<number | undefined>>;
+  maxCookTime?: number;
+  setMaxCookTime: React.Dispatch<React.SetStateAction<number | undefined>>;
+  maxTotalTime?: number;
+  setMaxTotalTime: React.Dispatch<React.SetStateAction<number | undefined>>;
+  includeIngredients: string[];
+  excludeIngredients: string[];
+  addIncludeIngredient: (value: string) => void;
+  addExcludeIngredient: (value: string) => void;
+  removeIncludeIngredient: (value: string) => void;
+  removeExcludeIngredient: (value: string) => void;
+  ingredientSuggestions: string[];
+  maxMissingIngredients?: number;
+  setMaxMissingIngredients: React.Dispatch<
+    React.SetStateAction<number | undefined>
+  >;
+  minMatchPercent?: number;
+  setMinMatchPercent: React.Dispatch<React.SetStateAction<number | undefined>>;
+  advancedFiltersKey: string;
+  applyFilters: () => void;
+  appliedSearch: string;
+  appliedOnlyFavorites: boolean;
+  appliedTagParam?: string;
+  appliedSelectedTagsKey: string;
+  appliedMaxPrepTime?: number;
+  appliedMaxCookTime?: number;
+  appliedMaxTotalTime?: number;
+  appliedIncludeIngredients: string[];
+  appliedExcludeIngredients: string[];
+  appliedMaxMissingIngredients?: number;
+  appliedMinMatchPercent?: number;
 };
 
 type UseRecipeFiltersOptions = {
@@ -58,6 +90,44 @@ export const useRecipeFilters = (
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [tagChoice, setTagChoice] = useState('');
   const [showTagPicker, setShowTagPicker] = useState(false);
+  const [maxPrepTime, setMaxPrepTime] = useState<number | undefined>();
+  const [maxCookTime, setMaxCookTime] = useState<number | undefined>();
+  const [maxTotalTime, setMaxTotalTime] = useState<number | undefined>();
+  const [includeIngredients, setIncludeIngredients] = useState<string[]>([]);
+  const [excludeIngredients, setExcludeIngredients] = useState<string[]>([]);
+  const [maxMissingIngredients, setMaxMissingIngredients] = useState<
+    number | undefined
+  >();
+  const [minMatchPercent, setMinMatchPercent] = useState<number | undefined>();
+  const [ingredientSuggestions, setIngredientSuggestions] = useState<string[]>(
+    [],
+  );
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [appliedOnlyFavorites, setAppliedOnlyFavorites] =
+    useState(initialFavorites);
+  const [appliedSelectedTags, setAppliedSelectedTags] = useState<Set<string>>(
+    new Set(),
+  );
+  const [appliedMaxPrepTime, setAppliedMaxPrepTime] = useState<
+    number | undefined
+  >();
+  const [appliedMaxCookTime, setAppliedMaxCookTime] = useState<
+    number | undefined
+  >();
+  const [appliedMaxTotalTime, setAppliedMaxTotalTime] = useState<
+    number | undefined
+  >();
+  const [appliedIncludeIngredients, setAppliedIncludeIngredients] = useState<
+    string[]
+  >([]);
+  const [appliedExcludeIngredients, setAppliedExcludeIngredients] = useState<
+    string[]
+  >([]);
+  const [appliedMaxMissingIngredients, setAppliedMaxMissingIngredients] =
+    useState<number | undefined>();
+  const [appliedMinMatchPercent, setAppliedMinMatchPercent] = useState<
+    number | undefined
+  >();
 
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(search), 350);
@@ -87,6 +157,46 @@ export const useRecipeFilters = (
     };
   }, [callApi, loadTags]);
 
+  useEffect(() => {
+    let active = true;
+    const loadIngredients = async () => {
+      try {
+        const data = await fetchRecipes(callApi, '/recipes', {
+          page: 1,
+          pageSize: 100,
+        });
+        if (!active) return;
+        const dedup = new Map<string, string>();
+        (data.items || []).forEach((recipe) => {
+          (recipe.ingredients || []).forEach((ingredient) => {
+            const raw = ingredient?.name ?? '';
+            const trimmed = raw.trim();
+            if (!trimmed) return;
+            const key = trimmed.toLowerCase();
+            if (!dedup.has(key)) dedup.set(key, trimmed);
+          });
+        });
+        const sorted = Array.from(dedup.values()).sort((a, b) =>
+          a.localeCompare(b),
+        );
+        setIngredientSuggestions(
+          sorted.length
+            ? sorted
+            : ['Salt', 'Pepper', 'Garlic', 'Onion', 'Olive oil'],
+        );
+      } catch (err) {
+        if (!active) return;
+        console.error('Failed to load ingredient suggestions', err);
+        toast.error('Could not load ingredient suggestions.');
+        setIngredientSuggestions(['Salt', 'Pepper', 'Garlic', 'Onion']);
+      }
+    };
+    void loadIngredients();
+    return () => {
+      active = false;
+    };
+  }, [callApi]);
+
   const { quickTags, availableTagChoices } = useMemo(() => {
     const normalized = availableTags.map((t) => t.trim()).filter(Boolean);
     const unique = Array.from(new Set(normalized)).sort((a, b) =>
@@ -105,6 +215,13 @@ export const useRecipeFilters = (
       .filter(Boolean);
     return tags.length ? tags.join(',') : undefined;
   }, [selectedTags]);
+
+  const appliedTagParam = useMemo(() => {
+    const tags = Array.from(appliedSelectedTags)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    return tags.length ? tags.join(',') : undefined;
+  }, [appliedSelectedTags]);
 
   useEffect(() => {
     if (!availableTagChoices.length) {
@@ -136,6 +253,43 @@ export const useRecipeFilters = (
     setShowTagPicker(false);
   };
 
+  const normalizeIngredient = (value: string) =>
+    value.trim().replace(/\s+/g, ' ');
+
+  const addIncludeIngredient = (value: string) => {
+    const normalized = normalizeIngredient(value);
+    if (!normalized) return;
+    setIncludeIngredients((prev) => {
+      if (prev.some((item) => item.toLowerCase() === normalized.toLowerCase()))
+        return prev;
+      return [...prev, normalized];
+    });
+  };
+
+  const addExcludeIngredient = (value: string) => {
+    const normalized = normalizeIngredient(value);
+    if (!normalized) return;
+    setExcludeIngredients((prev) => {
+      if (prev.some((item) => item.toLowerCase() === normalized.toLowerCase()))
+        return prev;
+      return [...prev, normalized];
+    });
+  };
+
+  const removeIncludeIngredient = (value: string) => {
+    const target = value.toLowerCase();
+    setIncludeIngredients((prev) =>
+      prev.filter((item) => item.toLowerCase() !== target),
+    );
+  };
+
+  const removeExcludeIngredient = (value: string) => {
+    const target = value.toLowerCase();
+    setExcludeIngredients((prev) =>
+      prev.filter((item) => item.toLowerCase() !== target),
+    );
+  };
+
   useEffect(() => {
     if (!syncWithUrl) return;
     const q = searchParams.get('q') ?? '';
@@ -148,8 +302,55 @@ export const useRecipeFilters = (
     setSearch(q);
     setDebouncedSearch(q);
     setOnlyFavorites(fav);
-    setSelectedTags(tags.length ? new Set(tags) : new Set());
+    const nextTags = tags.length ? new Set(tags) : new Set<string>();
+    setSelectedTags(nextTags);
+    setAppliedSelectedTags(nextTags);
+    setAppliedSearch(q);
+    setAppliedOnlyFavorites(fav);
   }, [searchParams, syncWithUrl]);
+
+  const advancedFiltersKey = useMemo(
+    () =>
+      [
+        appliedMaxPrepTime ?? '',
+        appliedMaxCookTime ?? '',
+        appliedMaxTotalTime ?? '',
+        appliedMaxMissingIngredients ?? '',
+        appliedMinMatchPercent ?? '',
+        appliedIncludeIngredients
+          .map((i) => i.trim().toLowerCase())
+          .filter(Boolean)
+          .sort()
+          .join(','),
+        appliedExcludeIngredients
+          .map((i) => i.trim().toLowerCase())
+          .filter(Boolean)
+          .sort()
+          .join(','),
+      ].join('|'),
+    [
+      appliedExcludeIngredients,
+      appliedIncludeIngredients,
+      appliedMaxCookTime,
+      appliedMaxMissingIngredients,
+      appliedMaxPrepTime,
+      appliedMaxTotalTime,
+      appliedMinMatchPercent,
+    ],
+  );
+
+  const applyFilters = () => {
+    setAppliedSearch(search);
+    setAppliedOnlyFavorites(onlyFavorites);
+    setAppliedSelectedTags(new Set(selectedTags));
+    setAppliedMaxPrepTime(maxPrepTime);
+    setAppliedMaxCookTime(maxCookTime);
+    setAppliedMaxTotalTime(maxTotalTime);
+    setAppliedIncludeIngredients(includeIngredients);
+    setAppliedExcludeIngredients(excludeIngredients);
+    setAppliedMaxMissingIngredients(maxMissingIngredients);
+    setAppliedMinMatchPercent(minMatchPercent);
+  };
 
   return {
     search,
@@ -169,5 +370,35 @@ export const useRecipeFilters = (
     tagParam,
     selectedTagsKey: buildSelectedTagsKey(selectedTags),
     syncWithUrl,
+    maxPrepTime,
+    setMaxPrepTime,
+    maxCookTime,
+    setMaxCookTime,
+    maxTotalTime,
+    setMaxTotalTime,
+    includeIngredients,
+    excludeIngredients,
+    addIncludeIngredient,
+    addExcludeIngredient,
+    removeIncludeIngredient,
+    removeExcludeIngredient,
+    ingredientSuggestions,
+    maxMissingIngredients,
+    setMaxMissingIngredients,
+    minMatchPercent,
+    setMinMatchPercent,
+    advancedFiltersKey,
+    applyFilters,
+    appliedSearch,
+    appliedOnlyFavorites,
+    appliedTagParam,
+    appliedSelectedTagsKey: buildSelectedTagsKey(appliedSelectedTags),
+    appliedMaxPrepTime,
+    appliedMaxCookTime,
+    appliedMaxTotalTime,
+    appliedIncludeIngredients,
+    appliedExcludeIngredients,
+    appliedMaxMissingIngredients,
+    appliedMinMatchPercent,
   };
 };

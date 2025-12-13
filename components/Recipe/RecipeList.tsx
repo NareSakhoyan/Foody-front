@@ -122,17 +122,35 @@ const RecipeList = ({
     const loadRecipes = async () => {
       setLoading(true);
       setError(null);
-      const path = filters.onlyFavorites ? '/recipes/favorites' : endpoint;
+      const path = filters.appliedOnlyFavorites
+        ? '/recipes/favorites'
+        : endpoint;
       try {
+        const includeIngredients = filters.appliedIncludeIngredients
+          .map((i) => i.trim())
+          .filter(Boolean)
+          .join(',');
+        const excludeIngredients = filters.appliedExcludeIngredients
+          .map((i) => i.trim())
+          .filter(Boolean)
+          .join(',');
+
         const query = {
           page,
           pageSize,
-          q: filters.debouncedSearch || undefined,
-          tag: filters.tagParam,
+          q: filters.appliedSearch || undefined,
+          tag: filters.appliedTagParam,
           status: includeDrafts ? undefined : 'published',
+          maxPrepTime: filters.appliedMaxPrepTime,
+          maxCookTime: filters.appliedMaxCookTime,
+          maxTotalTime: filters.appliedMaxTotalTime,
+          includeIngredients: includeIngredients || undefined,
+          excludeIngredients: excludeIngredients || undefined,
+          maxMissingIngredients: filters.appliedMaxMissingIngredients,
+          minMatchPercent: filters.appliedMinMatchPercent,
         } as const;
 
-        if (favoriteFirst && !filters.onlyFavorites && page === 1) {
+        if (favoriteFirst && !filters.appliedOnlyFavorites && page === 1) {
           const [favoriteRes, data] = await Promise.all([
             fetchRecipes(callApi, '/recipes/favorites', query),
             fetchRecipes(callApi, path, query),
@@ -173,9 +191,16 @@ const RecipeList = ({
     callApi,
     endpoint,
     includeDrafts,
-    filters.debouncedSearch,
-    filters.onlyFavorites,
-    filters.tagParam,
+    filters.appliedSearch,
+    filters.appliedOnlyFavorites,
+    filters.appliedTagParam,
+    filters.appliedMaxCookTime,
+    filters.appliedMaxTotalTime,
+    filters.appliedMaxMissingIngredients,
+    filters.appliedMaxPrepTime,
+    filters.appliedMinMatchPercent,
+    filters.appliedIncludeIngredients,
+    filters.appliedExcludeIngredients,
     favoriteFirst,
     page,
     pageSize,
@@ -195,8 +220,13 @@ const RecipeList = ({
 
   const currentFilterKey = useMemo(
     () =>
-      `${filters.debouncedSearch ?? ''}||${filters.tagParam ?? ''}||${filters.onlyFavorites ? '1' : '0'}`,
-    [filters.debouncedSearch, filters.onlyFavorites, filters.tagParam],
+      `${filters.appliedSearch ?? ''}||${filters.appliedTagParam ?? ''}||${filters.appliedOnlyFavorites ? '1' : '0'}||${filters.advancedFiltersKey}`,
+    [
+      filters.advancedFiltersKey,
+      filters.appliedOnlyFavorites,
+      filters.appliedSearch,
+      filters.appliedTagParam,
+    ],
   );
 
   useEffect(() => {
@@ -205,7 +235,7 @@ const RecipeList = ({
     setPage(1);
   }, [
     currentFilterKey,
-    filters.selectedTagsKey,
+    filters.appliedSelectedTagsKey,
     filters.syncWithUrl,
     paramsFilterKey,
     usingPreset,
@@ -214,16 +244,16 @@ const RecipeList = ({
   useEffect(() => {
     if (usingPreset || !filters.syncWithUrl) return;
     const params = new URLSearchParams();
-    if (filters.debouncedSearch) params.set('q', filters.debouncedSearch);
-    if (filters.tagParam) params.set('tag', filters.tagParam);
-    if (filters.onlyFavorites) params.set('fav', '1');
+    if (filters.appliedSearch) params.set('q', filters.appliedSearch);
+    if (filters.appliedTagParam) params.set('tag', filters.appliedTagParam);
+    if (filters.appliedOnlyFavorites) params.set('fav', '1');
     if (page > 1) params.set('page', String(page));
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [
-    filters.debouncedSearch,
-    filters.onlyFavorites,
+    filters.appliedOnlyFavorites,
+    filters.appliedSearch,
     filters.syncWithUrl,
-    filters.tagParam,
+    filters.appliedTagParam,
     page,
     pathname,
     router,
@@ -257,7 +287,7 @@ const RecipeList = ({
     try {
       await favoriteRecipe(callApi, recipe.id, nextState);
       setRecipes((prev) => {
-        if (filters.onlyFavorites && !nextState) {
+        if (filters.appliedOnlyFavorites && !nextState) {
           const updated = prev.filter((r) => r.id !== recipe.id);
           removedFromFavorites = prev.length !== updated.length;
           if (updated.length === 0 && page > 1) {
@@ -270,7 +300,7 @@ const RecipeList = ({
         );
         return favoriteFirst ? orderByFavorite(updated) : updated;
       });
-      if (filters.onlyFavorites && !nextState && removedFromFavorites) {
+      if (filters.appliedOnlyFavorites && !nextState && removedFromFavorites) {
         setTotal((t) => Math.max(0, t - 1));
       }
       toast.success(
