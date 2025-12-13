@@ -44,7 +44,7 @@ function PantryBuckets({
         {bucket.items.map((item) => (
           <div
             key={item.id}
-            className="flex flex-wrap items-center justify-between gap-3 py-3"
+            className="group flex flex-wrap items-center justify-between gap-3 py-3"
           >
             <div className="space-y-1">
               <div className="text-sm font-medium leading-tight">
@@ -61,7 +61,7 @@ function PantryBuckets({
                 <Button
                   variant="outline"
                   size="icon-sm"
-                  className="shrink-0"
+                  className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
                   title="Actions"
                 >
                   <MoreVertical className="size-4" />

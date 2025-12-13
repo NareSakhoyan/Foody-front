@@ -16,7 +16,7 @@ function ShoppingListItem({
   onRemove,
 }: ShoppingListItemProps) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-muted/40 p-3">
+    <div className="group flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-muted/40 p-3">
       <div className="space-y-1 min-w-0 flex-1">
         <div className="flex items-center gap-2 text-sm font-medium leading-tight">
           <CheckCircle className="size-4 shrink-0 text-muted-foreground" />
@@ -32,7 +32,7 @@ function ShoppingListItem({
         ) : null}
       </div>
       {readOnly ? null : (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             type="button"
             variant="outline"
