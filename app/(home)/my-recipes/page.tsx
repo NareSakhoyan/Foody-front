@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { SignInPrompt } from '@/components/Auth/SignInPrompt';
 import { useRecipeFilters } from '@/components/Recipe/useRecipeFilters';
 import { RecipeFilterBar } from '@/components/Recipe/RecipeFilterBar';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
 
 const MyRecipesPage = () => {
   const { user, loading } = useCurrentUser();
@@ -18,6 +19,13 @@ const MyRecipesPage = () => {
   const [closeSignal, setCloseSignal] = useState(0);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const filters = useRecipeFilters();
+  const {
+    items: searchHistory,
+    loading: searchHistoryLoading,
+    refresh: refreshSearchHistory,
+    remove: removeSearchHistory,
+    clear: clearSearchHistory,
+  } = useSearchHistory({ enabled: !!user });
 
   const handleSuccess = () => {
     setRefreshKey((key) => key + 1);
@@ -129,6 +137,12 @@ const MyRecipesPage = () => {
           minMatchPercent={filters.minMatchPercent}
           onMinMatchPercentChange={filters.setMinMatchPercent}
           onApply={filters.applyFilters}
+          searchHistoryItems={searchHistory}
+          searchHistoryLoading={searchHistoryLoading}
+          onSearchHistoryRefresh={refreshSearchHistory}
+          onSearchHistorySelect={filters.applySearchHistory}
+          onSearchHistoryDelete={removeSearchHistory}
+          onSearchHistoryClear={clearSearchHistory}
         />
 
         <RecipeList

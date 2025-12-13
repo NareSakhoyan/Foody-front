@@ -1,5 +1,6 @@
 import React from 'react';
 import { RecipeFilters } from './RecipeFilters';
+import type { SearchHistoryItem } from '@/lib/api/search-history';
 
 type RecipeFilterBarProps = {
   search: string;
@@ -34,6 +35,12 @@ type RecipeFilterBarProps = {
   minMatchPercent?: number;
   onMinMatchPercentChange: (value?: number) => void;
   onApply: () => void;
+  searchHistoryItems?: SearchHistoryItem[];
+  searchHistoryLoading?: boolean;
+  onSearchHistoryRefresh?: () => void;
+  onSearchHistorySelect?: (entry: SearchHistoryItem) => void;
+  onSearchHistoryDelete?: (id: string) => void;
+  onSearchHistoryClear?: () => void;
 };
 
 export const RecipeFilterBar = ({
@@ -69,6 +76,12 @@ export const RecipeFilterBar = ({
   minMatchPercent,
   onMinMatchPercentChange,
   onApply,
+  searchHistoryItems,
+  searchHistoryLoading,
+  onSearchHistoryRefresh,
+  onSearchHistorySelect,
+  onSearchHistoryDelete,
+  onSearchHistoryClear,
 }: RecipeFilterBarProps) => (
   <RecipeFilters
     search={search}
@@ -103,5 +116,11 @@ export const RecipeFilterBar = ({
     minMatchPercent={minMatchPercent}
     onMinMatchPercentChange={onMinMatchPercentChange}
     onApply={onApply}
+    searchHistoryItems={searchHistoryItems}
+    searchHistoryLoading={searchHistoryLoading}
+    onSearchHistoryRefresh={onSearchHistoryRefresh}
+    onSearchHistorySelect={onSearchHistorySelect}
+    onSearchHistoryDelete={onSearchHistoryDelete}
+    onSearchHistoryClear={onSearchHistoryClear}
   />
 );

@@ -6,6 +6,7 @@ import { fetchRecipeTags, fetchRecipes } from '@/lib/api/recipes';
 import { getTagLabel } from '@/lib/utils/tags';
 import { useApi } from '@/hooks/useApi';
 import { toast } from 'sonner';
+import type { SearchHistoryItem } from '@/lib/api/search-history';
 
 export type RecipeFiltersState = {
   search: string;
@@ -46,6 +47,7 @@ export type RecipeFiltersState = {
   setMinMatchPercent: React.Dispatch<React.SetStateAction<number | undefined>>;
   advancedFiltersKey: string;
   applyFilters: () => void;
+  applySearchHistory: (entry: SearchHistoryItem) => void;
   appliedSearch: string;
   appliedOnlyFavorites: boolean;
   appliedTagParam?: string;
@@ -63,6 +65,46 @@ type UseRecipeFiltersOptions = {
   loadTags?: boolean;
   syncWithUrl?: boolean;
   initialFavorites?: boolean;
+};
+
+const parseNumberFilter = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+};
+
+const parseBooleanFilter = (value: unknown) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return ['true', '1', 'yes', 'y'].includes(normalized);
+  }
+  return false;
+};
+
+const parseListFilter = (value: unknown) => {
+  const seen = new Map<string, string>();
+  const addValue = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    const key = trimmed.toLowerCase();
+    if (!seen.has(key)) {
+      seen.set(key, trimmed);
+    }
+  };
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => addValue(String(item)));
+  } else if (typeof value === 'string') {
+    value.split(',').forEach((part) => addValue(part));
+  }
+
+  return Array.from(seen.values());
 };
 
 const buildSelectedTagsKey = (tags: Set<string>) =>
@@ -83,7 +125,7 @@ export const useRecipeFilters = (
   const { callApi } = useApi();
   const searchParams = useSearchParams();
 
-  const [search, setSearch] = useState('');
+  const [search, setSearchState] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(initialFavorites);
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
@@ -129,10 +171,18 @@ export const useRecipeFilters = (
     number | undefined
   >();
 
+  const setSearch = (value: string) => {
+    setSearchState(value);
+  };
+
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(search), 350);
     return () => clearTimeout(handle);
   }, [search]);
+
+  useEffect(() => {
+    setAppliedSearch(debouncedSearch);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     if (!loadTags) return undefined;
@@ -352,6 +402,65 @@ export const useRecipeFilters = (
     setAppliedMinMatchPercent(minMatchPercent);
   };
 
+  const applySearchHistory = (entry: SearchHistoryItem) => {
+    if (!entry) return;
+    const filtersRecord = (entry.filters ?? {}) as Record<string, unknown>;
+    const nextSearch = entry.query ?? '';
+    const tags = parseListFilter(
+      filtersRecord.tag ?? filtersRecord.tags ?? filtersRecord.tagParam,
+    );
+    const includes = parseListFilter(
+      filtersRecord.includeIngredients ??
+        filtersRecord.include ??
+        filtersRecord.ingredients,
+    );
+    const excludes = parseListFilter(
+      filtersRecord.excludeIngredients ?? filtersRecord.exclude,
+    );
+    const maxPrep = parseNumberFilter(filtersRecord.maxPrepTime);
+    const maxCook = parseNumberFilter(filtersRecord.maxCookTime);
+    const maxTotal = parseNumberFilter(
+      filtersRecord.maxTotalTime ?? filtersRecord.totalTime,
+    );
+    const maxMissing = parseNumberFilter(
+      filtersRecord.maxMissingIngredients ?? filtersRecord.maxMissing,
+    );
+    const minMatch = parseNumberFilter(
+      filtersRecord.minMatchPercent ?? filtersRecord.matchPercent,
+    );
+    const onlyFav = parseBooleanFilter(
+      filtersRecord.onlyFavorites ?? filtersRecord.favorites,
+    );
+
+    const tagSet = new Set(tags);
+
+    setSearch(nextSearch);
+    setDebouncedSearch(nextSearch);
+    setOnlyFavorites(onlyFav);
+    setSelectedTags(tagSet);
+    setAppliedSelectedTags(tagSet);
+    setShowTagPicker(false);
+    setTagChoice('');
+
+    setMaxPrepTime(maxPrep);
+    setMaxCookTime(maxCook);
+    setMaxTotalTime(maxTotal);
+    setIncludeIngredients(includes);
+    setExcludeIngredients(excludes);
+    setMaxMissingIngredients(maxMissing);
+    setMinMatchPercent(minMatch);
+
+    setAppliedSearch(nextSearch);
+    setAppliedOnlyFavorites(onlyFav);
+    setAppliedMaxPrepTime(maxPrep);
+    setAppliedMaxCookTime(maxCook);
+    setAppliedMaxTotalTime(maxTotal);
+    setAppliedIncludeIngredients(includes);
+    setAppliedExcludeIngredients(excludes);
+    setAppliedMaxMissingIngredients(maxMissing);
+    setAppliedMinMatchPercent(minMatch);
+  };
+
   return {
     search,
     debouncedSearch,
@@ -389,6 +498,7 @@ export const useRecipeFilters = (
     setMinMatchPercent,
     advancedFiltersKey,
     applyFilters,
+    applySearchHistory,
     appliedSearch,
     appliedOnlyFavorites,
     appliedTagParam,

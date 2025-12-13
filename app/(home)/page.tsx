@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { fetchShoppingItems } from '@/lib/api/shopping-list';
 import { RecipeFilterBar } from '@/components/Recipe/RecipeFilterBar';
 import { useRecipeFilters } from '@/components/Recipe/useRecipeFilters';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
 
 const HomePage = () => {
   const { callApi } = useApi();
@@ -22,6 +23,13 @@ const HomePage = () => {
   );
   const { user, loading } = useCurrentUser();
   const filters = useRecipeFilters();
+  const {
+    items: searchHistory,
+    loading: searchHistoryLoading,
+    refresh: refreshSearchHistory,
+    remove: removeSearchHistory,
+    clear: clearSearchHistory,
+  } = useSearchHistory({ enabled: !!user });
 
   const handleCreated = () => {
     setRefreshKey((key) => key + 1);
@@ -137,6 +145,14 @@ const HomePage = () => {
               minMatchPercent={filters.minMatchPercent}
               onMinMatchPercentChange={filters.setMinMatchPercent}
               onApply={filters.applyFilters}
+              searchHistoryItems={user ? searchHistory : undefined}
+              searchHistoryLoading={user ? searchHistoryLoading : undefined}
+              onSearchHistoryRefresh={user ? refreshSearchHistory : undefined}
+              onSearchHistorySelect={
+                user ? filters.applySearchHistory : undefined
+              }
+              onSearchHistoryDelete={user ? removeSearchHistory : undefined}
+              onSearchHistoryClear={user ? clearSearchHistory : undefined}
             />
             <RecipeList
               refreshKey={refreshKey}
